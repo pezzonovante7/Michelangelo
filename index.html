@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MICHELANGELO | Training Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #ffffff; color: #0f172a; font-family: 'Inter', sans-serif; }
+        .app-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .form-input { background: #ffffff; border: 2px solid #ccfbf1; padding: 0.6rem; border-radius: 0.4rem; width: 100%; color: #0f172a; font-size: 0.875rem; transition: 0.2s; }
+        .form-input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1); }
+        .input-range { accent-color: #0d9488; height: 8px; border-radius: 5px; background: #ccfbf1; }
+        .btn-teal { background: #0d9488; color: white; transition: 0.2s; }
+        .btn-teal:active { transform: scale(0.98); background: #0f766e; }
+        .tab-btn { background: #ffffff; border: 2px solid #0d9488; color: #0d9488; transition: 0.2s; }
+        .tab-btn.active { background: #0d9488; color: white; }
+        .timer-font { font-family: 'Courier New', Courier, monospace; letter-spacing: -1px; }
+        .mcgill-box { background: #ffffff; border: 2px solid #14b8a6; }
+        .active-round { border: 2px solid #0d9488; background: #f0fdfa; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-md mx-auto">
+        <header class="mb-6 text-center">
+            <h1 class="text-4xl font-black text-teal-700 tracking-tight uppercase">Michelangelo</h1>
+            <p id="globalDate" class="text-teal-600 text-xs font-bold tracking-widest mt-1"></p>
+        </header>
+
+        <div class="flex gap-2 mb-8">
+            <button id="tab-david" onclick="switchApp('david')" class="tab-btn active flex-1 py-3 rounded-xl font-black uppercase text-sm tracking-wide">David (Lifting)</button>
+            <button id="tab-jakub" onclick="switchApp('jakub')" class="tab-btn flex-1 py-3 rounded-xl font-black uppercase text-sm tracking-wide">Jakub (Boxing)</button>
+        </div>
+
+        <div id="app-david" class="block">
+            <div class="app-card p-5 space-y-4 border-t-4 border-teal-600">
+                <div class="grid grid-cols-2 gap-3">
+                    <section>
+                        <label class="text-[10px] uppercase font-bold text-teal-600">Workout Split</label>
+                        <select id="workoutSplit" class="form-input" onchange="renderExercises()">
+                            <option value="A">Set A (Dominance)</option>
+                            <option value="B">Set B (Hybrid)</option>
+                        </select>
+                    </section>
+                    <section>
+                        <label class="text-[10px] uppercase font-bold text-teal-600">Target Type</label>
+                        <select id="workoutType" class="form-input" onchange="renderExercises()">
+                            <option value="Push">Push</option>
+                            <option value="Pull">Pull</option>
+                            <option value="Legs">Legs</option>
+                        </select>
+                    </section>
+                </div>
+
+                <div class="flex items-center gap-3 mcgill-box p-3 rounded-lg mb-2">
+                    <input type="checkbox" id="mcgill-david" class="w-5 h-5 accent-teal-600">
+                    <div>
+                        <label for="mcgill-david" class="text-xs font-bold text-teal-900 block leading-tight">McGill Big 3</label>
+                        <span class="text-[9px] text-teal-600 uppercase font-black">Pre-hab Required</span>
+                    </div>
+                </div>
+
+                <div id="exerciseInputs" class="space-y-4"></div>
+
+                <button id="saveBtn-david" onclick="submitDavid()" class="btn-teal font-black text-sm uppercase tracking-widest mt-6 py-4 rounded-xl w-full shadow-lg shadow-teal-700/20">Sync David Data</button>
+                <p id="status-david" class="text-center text-[10px] font-bold h-4 uppercase mt-2"></p>
+            </div>
+        </div>
+
+        <div id="app-jakub" class="hidden">
+            <div class="app-card p-8 mb-6 text-center border-t-4 border-teal-600">
+                <div id="roundCount" class="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-2">Round 1 of 6</div>
+                <div id="timerDisplay" class="text-7xl font-black timer-font text-slate-900 mb-4">03:00</div>
+                <div id="phaseIndicator" class="inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-50 text-teal-700 mb-8 border border-teal-100">
+                    Ready to Work
+                </div>
+                
+                <div class="flex gap-4">
+                    <button id="mainBtn" onclick="toggleClock()" class="btn-teal w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-700/20">Start Round</button>
+                    <button onclick="resetClock()" class="bg-slate-100 px-6 rounded-xl font-bold text-slate-400 hover:bg-slate-200 transition-colors">⟳</button>
+                </div>
+            </div>
+
+            <div class="mcgill-box p-4 mb-6 flex items-center justify-between rounded-2xl">
+                <div>
+                    <label for="mcgill-jakub" class="text-xs font-black uppercase text-teal-800 block">McGill Big 3</label>
+                    <p class="text-[9px] text-teal-600 uppercase font-bold">Spine Decompression Active?</p>
+                </div>
+                <input type="checkbox" id="mcgill-jakub" class="w-6 h-6 rounded accent-teal-600">
+            </div>
+
+            <div id="roundInputs" class="space-y-4"></div>
+
+            <button id="saveBtn-jakub" onclick="submitJakub()" class="btn-teal w-full mt-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-teal-700/20">
+                Sync Jakub Data
+            </button>
+            <p id="status-jakub" class="text-center text-[10px] mt-4 font-bold uppercase h-4"></p>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // GLOBAL SETTINGS & TAB LOGIC
+        // ==========================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznAXir2kMepa2eHWsZfUef-TXvhKhaCOa-8thQexwAHOVB4c5lZpoQLF0AjbzI2Lg/exec"; 
+        
+        document.getElementById('globalDate').innerText = new Date().toDateString();
+
+        function switchApp(appName) {
+            document.getElementById('app-david').style.display = appName === 'david' ? 'block' : 'none';
+            document.getElementById('app-jakub').style.display = appName === 'jakub' ? 'block' : 'none';
+            
+            document.getElementById('tab-david').classList.toggle('active', appName === 'david');
+            document.getElementById('tab-jakub').classList.toggle('active', appName === 'jakub');
+        }
+
+        // ==========================================
+        // DAVID (LIFTING) LOGIC
+        // ==========================================
+        const workouts = {
+            A: {
+                Push: ['Hammer Press', 'Weighted Dips', 'Lateral Raise Machine', 'Battle Ropes', 'Cable Tricep Pushdown'],
+                Pull: ['Weighted Pull-ups', 'DB Chest Row', 'Preacher Machine', 'Med Ball Slams', 'Face Pulls'],
+                Legs: ['Box Step-Ups', 'Leg Press', 'KB Goblet Squat', 'Seated Calf Raise', 'SL Leg Extension']
+            },
+            B: {
+                Push: ['Floor Press', 'Standing Lateral Machine', 'Weighted Dips (Upright)', 'Med Ball Chest Pass', 'Incline DB Press'],
+                Pull: ['V-Bar Cable Row', 'Weighted Pull-ups (Chin)', 'Hammer Row', 'Battle Ropes', 'Suitcase Carry'],
+                Legs: ['Bulgarian Split Squat', 'KB Swings', 'Seated Leg Curls', 'Seated Calf Raise', 'SL Glute Bridge']
+            }
+        };
+
+        // Dynamically assign units based on exercise type
+        function getExerciseFormat(ex) {
+            const name = ex.toLowerCase();
+            if (name.includes('battle ropes')) return { l1: 'TIME (SEC)', l2: 'SETS', u1: 's', u2: 'sets' };
+            if (name.includes('carry')) return { l1: 'WEIGHT (KG)', l2: 'DISTANCE (M)', u1: 'kg', u2: 'm' };
+            if (name.includes('med ball')) return { l1: 'BALL WT', l2: 'REPS', u1: '', u2: 'reps' }; 
+            if (name.includes('step-ups') || name.includes('sl ') || name.includes('bulgarian') || name.includes('lunge')) {
+                return { l1: 'ADDED WT (KG)', l2: 'REPS (PER LEG)', u1: 'kg', u2: 'reps/leg' };
+            }
+            return { l1: 'WEIGHT (KG)', l2: 'REPS', u1: 'kg', u2: 'reps' };
+        }
+
+        function renderExercises() {
+            const split = document.getElementById('workoutSplit').value;
+            const type = document.getElementById('workoutType').value;
+            const container = document.getElementById('exerciseInputs');
+            
+            container.innerHTML = workouts[split][type].map(ex => {
+                const format = getExerciseFormat(ex);
+                return `
+                <div class="border-b border-teal-50 pb-3">
+                    <label class="text-[11px] font-black text-teal-800 uppercase block mb-2 tracking-wide">${ex}</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-[9px] text-teal-600 font-bold block mb-1 tracking-wider">${format.l1}</span>
+                            <input type="number" step="any" class="form-input metric1-input" data-name="${ex}" data-unit="${format.u1}">
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-teal-600 font-bold block mb-1 tracking-wider">${format.l2}</span>
+                            <input type="number" step="any" class="form-input metric2-input" data-unit="${format.u2}">
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function submitDavid() {
+            const btn = document.getElementById('saveBtn-david');
+            const status = document.getElementById('status-david');
+            
+            let exList = [];
+            document.querySelectorAll('.metric1-input').forEach((input, index) => {
+                const m2 = document.querySelectorAll('.metric2-input')[index];
+                const u1 = input.dataset.unit;
+                const u2 = m2.dataset.unit;
+                const val1 = input.value || 0;
+                const val2 = m2.value || 0;
+                const unit1Str = u1 ? u1 : '';
+                
+                exList.push(`${input.dataset.name}: ${val1}${unit1Str} x ${val2} ${u2}`);
+            });
+
+            const payload = {
+                appName: "David",
+                date: new Date().toLocaleDateString(),
+                split: document.getElementById('workoutSplit').value,
+                type: document.getElementById('workoutType').value,
+                mcgill: document.getElementById('mcgill-david').checked ? "YES" : "NO",
+                ex1: exList[0] || "",
+                ex2: exList[1] || "",
+                ex3: exList[2] || "",
+                ex4: exList[3] || "",
+                ex5: exList[4] || ""
+            };
+
+            btn.disabled = true;
+            status.innerText = "Syncing to Cloud...";
+            status.className = "text-center text-[10px] mt-2 font-bold uppercase text-slate-400";
+
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                status.className = "text-center text-[10px] mt-2 font-bold uppercase text-teal-600";
+                status.innerText = "✓ SYNC SUCCESSFUL";
+                setTimeout(() => location.reload(), 1500);
+            } catch (e) {
+                status.className = "text-center text-[10px] mt-2 font-bold uppercase text-red-500";
+                status.innerText = "⚠ SYNC FAILED";
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // JAKUB (BOXING) LOGIC
+        // ==========================================
+        const boxingPlan = [
+            { id: 1, name: "The Jab & The Line", focus: "Circle & Measure" },
+            { id: 2, name: "Power & Hip Rotation", focus: "1-2 Technique" },
+            { id: 3, name: "Head Movement", focus: "Slips & Rolls" },
+            { id: 4, name: "Inside & Hooks", focus: "Short Power" },
+            { id: 5, name: "Volume Intensity", focus: "High Speed" },
+            { id: 6, name: "The Grand Finale", focus: "Free Flow" }
+        ];
+
+        let timeLeft = 180, timerId = null, isRunning = false, isResting = false, currentRound = 1;
+
+        function initRounds() {
+            document.getElementById('roundInputs').innerHTML = boxingPlan.map(round => `
+                <div class="app-card p-4 transition-all duration-300 border-l-4 border-l-slate-200" id="card-${round.id}">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <span class="text-[10px] font-black text-teal-600 uppercase">Round ${round.id}</span>
+                            <h3 class="text-sm font-bold text-slate-800">${round.name}</h3>
+                        </div>
+                        <span class="text-[9px] font-bold text-teal-600 uppercase">${round.focus}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-[9px] font-black text-teal-800 uppercase w-8">RPE</span>
+                        <input type="range" min="1" max="10" value="5" class="w-full input-range rpe-slider" data-round="${round.id}" oninput="this.nextElementSibling.innerText = this.value">
+                        <span class="text-lg font-black text-teal-700 w-4 text-center">5</span>
+                    </div>
+                </div>
+            `).join('');
+            updateHighlight();
+        }
+
+        function toggleClock() {
+            const btn = document.getElementById('mainBtn');
+            if (isRunning) { clearInterval(timerId); btn.innerText = "Resume"; } 
+            else { timerId = setInterval(tick, 1000); btn.innerText = "Pause"; }
+            isRunning = !isRunning;
+        }
+
+        function tick() {
+            if (timeLeft > 0) timeLeft--;
+            else {
+                if (!isResting) {
+                    isResting = true; timeLeft = 60;
+                    document.getElementById('phaseIndicator').innerText = "Recovery Phase";
+                    document.getElementById('phaseIndicator').className = "inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 mb-8 border border-amber-100";
+                } else {
+                    isResting = false; currentRound++;
+                    if (currentRound > 6) { resetClock(); alert("Session Complete!"); return; }
+                    timeLeft = 180;
+                    document.getElementById('phaseIndicator').innerText = "Work Phase";
+                    document.getElementById('phaseIndicator').className = "inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-50 text-teal-700 mb-8 border border-teal-100";
+                    updateHighlight();
+                }
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+            document.getElementById('timerDisplay').innerText = `${m}:${s < 10 ? '0' + s : s}`;
+            document.getElementById('roundCount').innerText = `Round ${currentRound} of 6`;
+        }
+
+        function updateHighlight() {
+            for (let i = 1; i <= 6; i++) {
+                const card = document.getElementById(`card-${i}`);
+                if (i === currentRound) { card.classList.add('active-round', 'border-l-teal-600'); card.classList.remove('border-l-slate-200'); } 
+                else { card.classList.remove('active-round', 'border-l-teal-600'); card.classList.add('border-l-slate-200'); }
+            }
+        }
+
+        function resetClock() {
+            clearInterval(timerId); timeLeft = 180; isRunning = false; isResting = false; currentRound = 1;
+            document.getElementById('mainBtn').innerText = "Start Round";
+            updateUI(); updateHighlight();
+        }
+
+        async function submitJakub() {
+            const btn = document.getElementById('saveBtn-jakub');
+            const status = document.getElementById('status-jakub');
+            let totalLoad = 0, roundData = {};
+            
+            document.querySelectorAll('.rpe-slider').forEach(s => {
+                const val = parseInt(s.value);
+                roundData[`Round_${s.dataset.round}`] = val;
+                totalLoad += val;
+            });
+
+            const payload = {
+                appName: "Jakub",
+                date: new Date().toLocaleDateString(),
+                type: "Boxing",
+                mcgill: document.getElementById('mcgill-jakub').checked ? "YES" : "NO",
+                totalLoad: totalLoad,
+                avgIntensity: (totalLoad / 6).toFixed(1),
+                ...roundData
+            };
+
+            btn.disabled = true;
+            status.innerText = "Syncing to Cloud...";
+            status.className = "text-center text-[10px] mt-4 font-bold uppercase text-slate-400";
+
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                status.className = "text-center text-[10px] mt-4 font-bold uppercase text-teal-600";
+                status.innerText = "✓ SYNC SUCCESSFUL";
+                setTimeout(() => location.reload(), 1500);
+            } catch (e) {
+                status.className = "text-center text-[10px] mt-4 font-bold uppercase text-red-500";
+                status.innerText = "⚠ SYNC FAILED";
+                btn.disabled = false;
+            }
+        }
+
+        // Initialize modules
+        renderExercises();
+        initRounds();
+    </script>
+</body>
+</html>

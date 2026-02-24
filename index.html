@@ -2,13 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MICHELANGELO | Training Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #ffffff; color: #0f172a; font-family: 'Inter', sans-serif; }
         .app-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-        .form-input { background: #ffffff; border: 2px solid #ccfbf1; padding: 0.6rem; border-radius: 0.4rem; width: 100%; color: #0f172a; font-size: 0.875rem; transition: 0.2s; }
+        
+        /* FIX 2 & 3: Forced font-size to 16px to stop browser auto-zoom. Increased padding and added min-height for better touch targets */
+        .form-input { 
+            background: #ffffff; 
+            border: 2px solid #ccfbf1; 
+            padding: 12px 16px; 
+            border-radius: 0.4rem; 
+            width: 100%; 
+            color: #0f172a; 
+            font-size: 16px; 
+            transition: 0.2s; 
+            min-height: 48px; 
+            box-sizing: border-box; 
+        }
+        
         .form-input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1); }
         .input-range { accent-color: #0d9488; height: 8px; border-radius: 5px; background: #ccfbf1; }
         .btn-teal { background: #0d9488; color: white; transition: 0.2s; }

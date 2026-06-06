@@ -1,352 +1,348 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MICHELANGELO | Training Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f7f5f0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Michelangelo</title>
+    <script>
+        (function () {
+            var t = localStorage.getItem('michelangelo_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.content = t === 'dark' ? '#09090b' : '#f7f5f0';
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #ffffff; color: #0f172a; font-family: 'Inter', sans-serif; }
-        .app-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-        
-        /* FIX 2 & 3: Forced font-size to 16px to stop browser auto-zoom. Increased padding and added min-height for better touch targets */
-        .form-input { 
-            background: #ffffff; 
-            border: 2px solid #ccfbf1; 
-            padding: 12px 16px; 
-            border-radius: 0.4rem; 
-            width: 100%; 
-            color: #0f172a; 
-            font-size: 16px; 
-            transition: 0.2s; 
-            min-height: 48px; 
-            box-sizing: border-box; 
+        :root, [data-theme="light"] {
+            --bg: #f7f5f0;
+            --surface: #ffffff;
+            --surface-2: #f0ece4;
+            --line: rgba(120, 95, 55, 0.14);
+            --gold: #8b6914;
+            --gold-dim: rgba(139, 105, 20, 0.35);
+            --gold-soft: rgba(139, 105, 20, 0.1);
+            --text: #1a1814;
+            --muted: #6b6560;
+            --dim: #9a948c;
+            --error: #b54545;
+            --success: #5a7a42;
+            --on-gold: #f7f5f0;
+            --glow: rgba(139, 105, 20, 0.06);
+            --display: 'Cormorant Garamond', Georgia, serif;
+            --ui: 'DM Sans', system-ui, sans-serif;
+            --mono: 'IBM Plex Mono', monospace;
         }
-        
-        .form-input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1); }
-        .input-range { accent-color: #0d9488; height: 8px; border-radius: 5px; background: #ccfbf1; }
-        .btn-teal { background: #0d9488; color: white; transition: 0.2s; }
-        .btn-teal:active { transform: scale(0.98); background: #0f766e; }
-        .tab-btn { background: #ffffff; border: 2px solid #0d9488; color: #0d9488; transition: 0.2s; }
-        .tab-btn.active { background: #0d9488; color: white; }
-        .timer-font { font-family: 'Courier New', Courier, monospace; letter-spacing: -1px; }
-        .mcgill-box { background: #ffffff; border: 2px solid #14b8a6; }
-        .active-round { border: 2px solid #0d9488; background: #f0fdfa; }
+
+        [data-theme="dark"] {
+            --bg: #09090b;
+            --surface: #131316;
+            --surface-2: #1a1a1f;
+            --line: rgba(196, 165, 116, 0.1);
+            --gold: #c4a574;
+            --gold-dim: rgba(196, 165, 116, 0.35);
+            --gold-soft: rgba(196, 165, 116, 0.15);
+            --text: #edeae4;
+            --muted: #7a756f;
+            --dim: #4a4744;
+            --error: #d47272;
+            --success: #8aab6e;
+            --on-gold: #09090b;
+            --glow: rgba(196, 165, 116, 0.06);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: 100%; }
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 120% 80% at 50% -20%, var(--glow), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, var(--glow), transparent);
+            color: var(--text);
+            font-family: var(--ui);
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.25s, color 0.25s;
+        }
+
+        .shell {
+            max-width: 26rem; margin: 0 auto;
+            padding:
+                max(1rem, env(safe-area-inset-top))
+                max(1rem, env(safe-area-inset-right))
+                max(1.5rem, env(safe-area-inset-bottom))
+                max(1rem, env(safe-area-inset-left));
+            min-height: 100dvh;
+        }
+        body.has-rest-timer .shell {
+            padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
+        }
+
+        .display { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; }
+        .label {
+            font-size: 0.625rem; font-weight: 600; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--gold);
+        }
+        .muted { color: var(--muted); }
+        .dim { color: var(--dim); }
+
+        .panel {
+            background: var(--surface);
+            padding: 1.25rem 1.15rem;
+            margin-bottom: 0.65rem;
+            position: relative;
+            transition: background 0.25s;
+        }
+        .panel-hero::before {
+            content: ''; position: absolute; top: 0; left: 1.15rem; right: 1.15rem;
+            height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .back {
+            background: none; border: none; color: var(--muted);
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; padding: 0.75rem 0; margin-bottom: 0.75rem;
+            cursor: pointer; min-height: 44px; touch-action: manipulation;
+        }
+        .back:active { color: var(--gold); }
+
+        .btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; min-height: 48px; padding: 0.85rem 1rem;
+            background: var(--gold); color: var(--on-gold);
+            border: none; font-family: var(--ui); font-size: 0.7rem;
+            font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+            cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.99); opacity: 0.9; }
+        .btn:disabled { opacity: 0.35; pointer-events: none; }
+
+        .btn-ghost {
+            background: transparent; color: var(--gold);
+            border: 1px solid var(--gold-dim);
+            min-height: 48px; padding: 0.7rem 1rem; font-size: 0.65rem; font-weight: 600;
+            letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-ghost:active { background: var(--gold-soft); }
+
+        .btn-github {
+            display: flex; align-items: center; justify-content: center; gap: 0.65rem;
+            width: 100%; min-height: 48px; padding: 0.9rem;
+            background: var(--surface-2); color: var(--text);
+            border: 1px solid var(--line);
+            font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-github:active { border-color: var(--gold-dim); }
+
+        .btn-set {
+            min-width: 44px; min-height: 44px;
+            background: var(--surface-2); color: var(--dim);
+            border: 1px solid var(--line); font-family: var(--mono);
+            font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+            touch-action: manipulation;
+        }
+        .btn-set.done { background: var(--gold-soft); color: var(--gold); border-color: var(--gold); }
+
+        .input {
+            width: 100%; background: var(--surface-2); color: var(--text);
+            border: none; border-bottom: 1px solid var(--line);
+            padding: 0.85rem 0.75rem; font-size: 16px; font-family: var(--ui);
+            min-height: 48px; transition: border-color 0.15s, background 0.25s;
+            -webkit-appearance: none; border-radius: 0;
+        }
+        .input:focus { outline: none; border-bottom-color: var(--gold); }
+        .input::placeholder { color: var(--dim); }
+        .input-sm {
+            text-align: center; padding: 0.6rem 0.35rem; min-height: 44px;
+            font-family: var(--mono); font-size: 0.9rem;
+        }
+        textarea.input { resize: vertical; min-height: 4.5rem; }
+
+        .check {
+            display: flex; align-items: flex-start; gap: 0.85rem;
+            padding: 0.85rem 0; border-bottom: 1px solid var(--line); cursor: pointer;
+            min-height: 44px; touch-action: manipulation;
+        }
+        .check:last-of-type { border-bottom: none; }
+        .check input {
+            width: 1.25rem; height: 1.25rem; margin-top: 0.1rem;
+            accent-color: var(--gold); flex-shrink: 0;
+        }
+        .check-title { font-size: 0.85rem; font-weight: 600; color: var(--text); display: block; }
+        .check-sub { font-size: 0.7rem; color: var(--muted); line-height: 1.5; margin-top: 0.2rem; display: block; }
+
+        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .week-nav button {
+            background: none; border: none; color: var(--muted);
+            font-size: 1.5rem; min-width: 44px; min-height: 44px;
+            cursor: pointer; touch-action: manipulation;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .week-nav button:active { color: var(--gold); }
+
+        .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; margin-bottom: 1.25rem; }
+        .day {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 0.3rem; min-height: 58px; padding: 0.5rem 0.15rem;
+            background: transparent; border: none; cursor: pointer;
+            transition: background 0.15s; touch-action: manipulation;
+        }
+        .day:active { background: var(--surface-2); }
+        .day-letter { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; }
+        .day-code {
+            font-family: var(--display); font-size: 1.15rem; font-weight: 600;
+            color: var(--muted); line-height: 1;
+        }
+        .day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); }
+        .day.is-today .day-code { color: var(--gold); }
+        .day.is-today .day-dot { background: var(--gold); box-shadow: 0 0 6px var(--gold-soft); }
+        .day.is-done .day-dot { background: var(--success); }
+        .day.is-done .day-code { color: var(--text); }
+
+        .pillar { margin-bottom: 0.85rem; }
+        .pillar:last-child { margin-bottom: 0; }
+        .pillar-head { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+        .pillar-track { height: 2px; background: var(--surface-2); overflow: hidden; }
+        .pillar-fill { height: 100%; background: var(--gold); transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        .exercise { padding-bottom: 1.15rem; margin-bottom: 1.15rem; border-bottom: 1px solid var(--line); }
+        .exercise:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .exercise-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .exercise-name { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; flex: 1; }
+        .exercise-meta { font-family: var(--mono); font-size: 0.6rem; color: var(--gold); flex-shrink: 0; }
+
+        .set-grid { display: grid; grid-template-columns: 2.25rem 1fr 1fr 2.75rem; gap: 0.35rem; align-items: center; margin-bottom: 0.45rem; }
+        .set-num { font-family: var(--mono); font-size: 0.6rem; color: var(--dim); text-align: center; }
+        .ghost-hint { font-size: 0.6rem; color: var(--dim); font-style: italic; margin-bottom: 0.5rem; }
+
+        .timer {
+            font-family: var(--mono); font-size: clamp(2.75rem, 14vw, 4.5rem);
+            font-weight: 500; letter-spacing: -0.04em; color: var(--text); line-height: 1;
+        }
+
+        .phase-track { display: flex; gap: 3px; margin-top: 1rem; }
+        .phase-seg { flex: 1; height: 2px; background: var(--surface-2); transition: background 0.3s; }
+        .phase-seg.done { background: var(--gold); }
+        .phase-seg.active { background: var(--gold-soft); box-shadow: 0 0 6px var(--gold-soft); }
+
+        .overview-row {
+            display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
+            padding: 0.6rem 0; border-bottom: 1px solid var(--line); font-size: 0.8rem;
+        }
+        .overview-row:last-child { border-bottom: none; }
+        .overview-time { font-family: var(--mono); font-size: 0.65rem; color: var(--gold); flex-shrink: 0; }
+
+        .rpe-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.75rem 0; min-height: 44px; }
+        .rpe-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--gold); width: 1.5rem; text-align: center; }
+        input[type="range"] { accent-color: var(--gold); height: 4px; flex: 1; min-height: 44px; }
+
+        .rest-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+            background: var(--surface); border-top: 1px solid var(--line);
+            padding: 1rem 1.15rem max(1rem, env(safe-area-inset-bottom));
+            max-width: 26rem; margin: 0 auto;
+            transition: background 0.25s;
+        }
+        .rest-bar.done { border-top-color: var(--gold); }
+        .rest-bar .timer { font-size: clamp(2rem, 10vw, 2.75rem); }
+        .rest-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+        .rest-actions button {
+            background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
+            min-height: 44px; padding: 0.5rem 0.85rem; font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .rest-actions button:last-child { color: var(--gold); border-color: var(--gold-dim); }
+
+        .sync-status { text-align: center; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 0.75rem; min-height: 1rem; color: var(--muted); }
+        .sync-ok { color: var(--success); }
+        .sync-warn { color: var(--gold); }
+
+        .status-error { color: var(--error); font-size: 0.75rem; font-weight: 600; text-align: center; margin-bottom: 1rem; }
+        .loading-pulse { color: var(--gold); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; animation: pulse 2s ease infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.75rem; }
+        .header-title { font-family: var(--display); font-size: clamp(1.5rem, 6vw, 1.75rem); font-weight: 600; letter-spacing: 0.04em; margin: 0; line-height: 1.1; }
+        .header-date { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; margin-top: 0.35rem; }
+        .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
+        .header-row { display: flex; align-items: center; gap: 0.5rem; }
+        .sign-out, .theme-toggle {
+            background: none; border: none; color: var(--dim);
+            font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; cursor: pointer; min-height: 36px;
+            padding: 0.25rem 0.35rem; touch-action: manipulation;
+        }
+        .theme-toggle { color: var(--gold); }
+        .sign-out:active, .theme-toggle:active { opacity: 0.7; }
+        .avatar { width: 1.75rem; height: 1.75rem; border-radius: 50%; opacity: 0.85; }
+
+        .list-item { font-size: 0.85rem; color: var(--muted); padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+        .list-item:last-child { border-bottom: none; }
+        .list-item strong { color: var(--text); font-weight: 500; }
+
+        .hidden { display: none !important; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .text-center { text-align: center; }
+        .flex { display: flex; }
+        .gap-3 { gap: 0.75rem; }
+        .flex-1 { flex: 1; min-width: 0; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+
+        .prog-banner {
+            background: var(--gold-soft); padding: 0.85rem 1rem; margin-bottom: 1rem;
+            border-left: 2px solid var(--gold);
+        }
+        .prog-banner-title { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.25rem; }
+        .prog-banner-sub { font-size: 0.75rem; color: var(--muted); }
+
+        .prog-target {
+            display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
+            padding: 0.5rem 0 0.65rem; margin-bottom: 0.5rem;
+            border-bottom: 1px dashed var(--line);
+        }
+        .prog-target-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); flex-shrink: 0; }
+        .prog-target-detail { font-size: 0.65rem; color: var(--muted); text-align: right; }
+
+        .set-grid.is-pr .set-num { color: var(--gold); font-weight: 700; }
+        .set-grid.is-pr .btn-set.done { box-shadow: 0 0 0 1px var(--gold); }
+
+        .pr-list { margin: 0.75rem 0 1rem; }
+        .pr-item {
+            font-size: 0.75rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line);
+            color: var(--text);
+        }
+        .pr-item:last-child { border-bottom: none; }
+        .pr-item strong { color: var(--gold); font-weight: 600; }
+
+        .advice-list { margin-bottom: 1rem; }
+        .advice-item { font-size: 0.7rem; color: var(--muted); padding: 0.35rem 0; }
+        .advice-item span { color: var(--gold); font-weight: 600; }
+
+        @media (max-width: 360px) {
+            .set-grid { grid-template-columns: 1.75rem 1fr 1fr 2.5rem; gap: 0.25rem; }
+            .header-title { font-size: 1.4rem; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
-
-    <div class="max-w-md mx-auto">
-        <header class="mb-6 text-center">
-            <h1 class="text-4xl font-black text-teal-700 tracking-tight uppercase">Michelangelo</h1>
-            <p id="globalDate" class="text-teal-600 text-xs font-bold tracking-widest mt-1"></p>
-        </header>
-
-        <div class="flex gap-2 mb-8">
-            <button id="tab-david" onclick="switchApp('david')" class="tab-btn active flex-1 py-3 rounded-xl font-black uppercase text-sm tracking-wide">David (Lifting)</button>
-            <button id="tab-jakub" onclick="switchApp('jakub')" class="tab-btn flex-1 py-3 rounded-xl font-black uppercase text-sm tracking-wide">Jakub (Boxing)</button>
-        </div>
-
-        <div id="app-david" class="block">
-            <div class="app-card p-5 space-y-4 border-t-4 border-teal-600">
-                <div class="grid grid-cols-2 gap-3">
-                    <section>
-                        <label class="text-[10px] uppercase font-bold text-teal-600">Workout Split</label>
-                        <select id="workoutSplit" class="form-input" onchange="renderExercises()">
-                            <option value="A">Set A (Dominance)</option>
-                            <option value="B">Set B (Hybrid)</option>
-                        </select>
-                    </section>
-                    <section>
-                        <label class="text-[10px] uppercase font-bold text-teal-600">Target Type</label>
-                        <select id="workoutType" class="form-input" onchange="renderExercises()">
-                            <option value="Push">Push</option>
-                            <option value="Pull">Pull</option>
-                            <option value="Legs">Legs</option>
-                        </select>
-                    </section>
-                </div>
-
-                <div class="flex items-center gap-3 mcgill-box p-3 rounded-lg mb-2">
-                    <input type="checkbox" id="mcgill-david" class="w-5 h-5 accent-teal-600">
-                    <div>
-                        <label for="mcgill-david" class="text-xs font-bold text-teal-900 block leading-tight">McGill Big 3</label>
-                        <span class="text-[9px] text-teal-600 uppercase font-black">Pre-hab Required</span>
-                    </div>
-                </div>
-
-                <div id="exerciseInputs" class="space-y-4"></div>
-
-                <button id="saveBtn-david" onclick="submitDavid()" class="btn-teal font-black text-sm uppercase tracking-widest mt-6 py-4 rounded-xl w-full shadow-lg shadow-teal-700/20">Sync David Data</button>
-                <p id="status-david" class="text-center text-[10px] font-bold h-4 uppercase mt-2"></p>
-            </div>
-        </div>
-
-        <div id="app-jakub" class="hidden">
-            <div class="app-card p-8 mb-6 text-center border-t-4 border-teal-600">
-                <div id="roundCount" class="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-2">Round 1 of 6</div>
-                <div id="timerDisplay" class="text-7xl font-black timer-font text-slate-900 mb-4">03:00</div>
-                <div id="phaseIndicator" class="inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-50 text-teal-700 mb-8 border border-teal-100">
-                    Ready to Work
-                </div>
-                
-                <div class="flex gap-4">
-                    <button id="mainBtn" onclick="toggleClock()" class="btn-teal w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-700/20">Start Round</button>
-                    <button onclick="resetClock()" class="bg-slate-100 px-6 rounded-xl font-bold text-slate-400 hover:bg-slate-200 transition-colors">⟳</button>
-                </div>
-            </div>
-
-            <div class="mcgill-box p-4 mb-6 flex items-center justify-between rounded-2xl">
-                <div>
-                    <label for="mcgill-jakub" class="text-xs font-black uppercase text-teal-800 block">McGill Big 3</label>
-                    <p class="text-[9px] text-teal-600 uppercase font-bold">Spine Decompression Active?</p>
-                </div>
-                <input type="checkbox" id="mcgill-jakub" class="w-6 h-6 rounded accent-teal-600">
-            </div>
-
-            <div id="roundInputs" class="space-y-4"></div>
-
-            <button id="saveBtn-jakub" onclick="submitJakub()" class="btn-teal w-full mt-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-teal-700/20">
-                Sync Jakub Data
-            </button>
-            <p id="status-jakub" class="text-center text-[10px] mt-4 font-bold uppercase h-4"></p>
+<body>
+    <div class="shell" id="app">
+        <div class="panel text-center" style="margin-top: 5rem;">
+            <p class="loading-pulse">Loading</p>
         </div>
     </div>
-
-    <script>
-        // ==========================================
-        // GLOBAL SETTINGS & TAB LOGIC
-        // ==========================================
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznAXir2kMepa2eHWsZfUef-TXvhKhaCOa-8thQexwAHOVB4c5lZpoQLF0AjbzI2Lg/exec"; 
-        
-        document.getElementById('globalDate').innerText = new Date().toDateString();
-
-        function switchApp(appName) {
-            document.getElementById('app-david').style.display = appName === 'david' ? 'block' : 'none';
-            document.getElementById('app-jakub').style.display = appName === 'jakub' ? 'block' : 'none';
-            
-            document.getElementById('tab-david').classList.toggle('active', appName === 'david');
-            document.getElementById('tab-jakub').classList.toggle('active', appName === 'jakub');
-        }
-
-        // ==========================================
-        // DAVID (LIFTING) LOGIC
-        // ==========================================
-        const workouts = {
-            A: {
-                Push: ['Hammer Press', 'Weighted Dips', 'Lateral Raise Machine', 'Battle Ropes', 'Cable Tricep Pushdown'],
-                Pull: ['Weighted Pull-ups', 'DB Chest Row', 'Preacher Machine', 'Med Ball Slams', 'Face Pulls'],
-                Legs: ['Box Step-Ups', 'Leg Press', 'KB Goblet Squat', 'Seated Calf Raise', 'SL Leg Extension']
-            },
-            B: {
-                Push: ['Floor Press', 'Standing Lateral Machine', 'Weighted Dips (Upright)', 'Med Ball Chest Pass', 'Incline DB Press'],
-                Pull: ['V-Bar Cable Row', 'Weighted Pull-ups (Chin)', 'Hammer Row', 'Battle Ropes', 'Suitcase Carry'],
-                Legs: ['Bulgarian Split Squat', 'KB Swings', 'Seated Leg Curls', 'Seated Calf Raise', 'SL Glute Bridge']
-            }
-        };
-
-        // Dynamically assign units based on exercise type
-        function getExerciseFormat(ex) {
-            const name = ex.toLowerCase();
-            if (name.includes('battle ropes')) return { l1: 'TIME (SEC)', l2: 'SETS', u1: 's', u2: 'sets' };
-            if (name.includes('carry')) return { l1: 'WEIGHT (KG)', l2: 'DISTANCE (M)', u1: 'kg', u2: 'm' };
-            if (name.includes('med ball')) return { l1: 'BALL WT', l2: 'REPS', u1: '', u2: 'reps' }; 
-            if (name.includes('step-ups') || name.includes('sl ') || name.includes('bulgarian') || name.includes('lunge')) {
-                return { l1: 'ADDED WT (KG)', l2: 'REPS (PER LEG)', u1: 'kg', u2: 'reps/leg' };
-            }
-            return { l1: 'WEIGHT (KG)', l2: 'REPS', u1: 'kg', u2: 'reps' };
-        }
-
-        function renderExercises() {
-            const split = document.getElementById('workoutSplit').value;
-            const type = document.getElementById('workoutType').value;
-            const container = document.getElementById('exerciseInputs');
-            
-            container.innerHTML = workouts[split][type].map(ex => {
-                const format = getExerciseFormat(ex);
-                return `
-                <div class="border-b border-teal-50 pb-3">
-                    <label class="text-[11px] font-black text-teal-800 uppercase block mb-2 tracking-wide">${ex}</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <span class="text-[9px] text-teal-600 font-bold block mb-1 tracking-wider">${format.l1}</span>
-                            <input type="number" step="any" class="form-input metric1-input" data-name="${ex}" data-unit="${format.u1}">
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-teal-600 font-bold block mb-1 tracking-wider">${format.l2}</span>
-                            <input type="number" step="any" class="form-input metric2-input" data-unit="${format.u2}">
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        async function submitDavid() {
-            const btn = document.getElementById('saveBtn-david');
-            const status = document.getElementById('status-david');
-            
-            let exList = [];
-            document.querySelectorAll('.metric1-input').forEach((input, index) => {
-                const m2 = document.querySelectorAll('.metric2-input')[index];
-                const u1 = input.dataset.unit;
-                const u2 = m2.dataset.unit;
-                const val1 = input.value || 0;
-                const val2 = m2.value || 0;
-                const unit1Str = u1 ? u1 : '';
-                
-                exList.push(`${input.dataset.name}: ${val1}${unit1Str} x ${val2} ${u2}`);
-            });
-
-            const payload = {
-                appName: "David",
-                date: new Date().toLocaleDateString(),
-                split: document.getElementById('workoutSplit').value,
-                type: document.getElementById('workoutType').value,
-                mcgill: document.getElementById('mcgill-david').checked ? "YES" : "NO",
-                ex1: exList[0] || "",
-                ex2: exList[1] || "",
-                ex3: exList[2] || "",
-                ex4: exList[3] || "",
-                ex5: exList[4] || ""
-            };
-
-            btn.disabled = true;
-            status.innerText = "Syncing to Cloud...";
-            status.className = "text-center text-[10px] mt-2 font-bold uppercase text-slate-400";
-
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                status.className = "text-center text-[10px] mt-2 font-bold uppercase text-teal-600";
-                status.innerText = "✓ SYNC SUCCESSFUL";
-                setTimeout(() => location.reload(), 1500);
-            } catch (e) {
-                status.className = "text-center text-[10px] mt-2 font-bold uppercase text-red-500";
-                status.innerText = "⚠ SYNC FAILED";
-                btn.disabled = false;
-            }
-        }
-
-        // ==========================================
-        // JAKUB (BOXING) LOGIC
-        // ==========================================
-        const boxingPlan = [
-            { id: 1, name: "The Jab & The Line", focus: "Circle & Measure" },
-            { id: 2, name: "Power & Hip Rotation", focus: "1-2 Technique" },
-            { id: 3, name: "Head Movement", focus: "Slips & Rolls" },
-            { id: 4, name: "Inside & Hooks", focus: "Short Power" },
-            { id: 5, name: "Volume Intensity", focus: "High Speed" },
-            { id: 6, name: "The Grand Finale", focus: "Free Flow" }
-        ];
-
-        let timeLeft = 180, timerId = null, isRunning = false, isResting = false, currentRound = 1;
-
-        function initRounds() {
-            document.getElementById('roundInputs').innerHTML = boxingPlan.map(round => `
-                <div class="app-card p-4 transition-all duration-300 border-l-4 border-l-slate-200" id="card-${round.id}">
-                    <div class="flex justify-between items-center mb-4">
-                        <div>
-                            <span class="text-[10px] font-black text-teal-600 uppercase">Round ${round.id}</span>
-                            <h3 class="text-sm font-bold text-slate-800">${round.name}</h3>
-                        </div>
-                        <span class="text-[9px] font-bold text-teal-600 uppercase">${round.focus}</span>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-[9px] font-black text-teal-800 uppercase w-8">RPE</span>
-                        <input type="range" min="1" max="10" value="5" class="w-full input-range rpe-slider" data-round="${round.id}" oninput="this.nextElementSibling.innerText = this.value">
-                        <span class="text-lg font-black text-teal-700 w-4 text-center">5</span>
-                    </div>
-                </div>
-            `).join('');
-            updateHighlight();
-        }
-
-        function toggleClock() {
-            const btn = document.getElementById('mainBtn');
-            if (isRunning) { clearInterval(timerId); btn.innerText = "Resume"; } 
-            else { timerId = setInterval(tick, 1000); btn.innerText = "Pause"; }
-            isRunning = !isRunning;
-        }
-
-        function tick() {
-            if (timeLeft > 0) timeLeft--;
-            else {
-                if (!isResting) {
-                    isResting = true; timeLeft = 60;
-                    document.getElementById('phaseIndicator').innerText = "Recovery Phase";
-                    document.getElementById('phaseIndicator').className = "inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 mb-8 border border-amber-100";
-                } else {
-                    isResting = false; currentRound++;
-                    if (currentRound > 6) { resetClock(); alert("Session Complete!"); return; }
-                    timeLeft = 180;
-                    document.getElementById('phaseIndicator').innerText = "Work Phase";
-                    document.getElementById('phaseIndicator').className = "inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-50 text-teal-700 mb-8 border border-teal-100";
-                    updateHighlight();
-                }
-            }
-            updateUI();
-        }
-
-        function updateUI() {
-            const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-            document.getElementById('timerDisplay').innerText = `${m}:${s < 10 ? '0' + s : s}`;
-            document.getElementById('roundCount').innerText = `Round ${currentRound} of 6`;
-        }
-
-        function updateHighlight() {
-            for (let i = 1; i <= 6; i++) {
-                const card = document.getElementById(`card-${i}`);
-                if (i === currentRound) { card.classList.add('active-round', 'border-l-teal-600'); card.classList.remove('border-l-slate-200'); } 
-                else { card.classList.remove('active-round', 'border-l-teal-600'); card.classList.add('border-l-slate-200'); }
-            }
-        }
-
-        function resetClock() {
-            clearInterval(timerId); timeLeft = 180; isRunning = false; isResting = false; currentRound = 1;
-            document.getElementById('mainBtn').innerText = "Start Round";
-            updateUI(); updateHighlight();
-        }
-
-        async function submitJakub() {
-            const btn = document.getElementById('saveBtn-jakub');
-            const status = document.getElementById('status-jakub');
-            let totalLoad = 0, roundData = {};
-            
-            document.querySelectorAll('.rpe-slider').forEach(s => {
-                const val = parseInt(s.value);
-                roundData[`Round_${s.dataset.round}`] = val;
-                totalLoad += val;
-            });
-
-            const payload = {
-                appName: "Jakub",
-                date: new Date().toLocaleDateString(),
-                type: "Boxing",
-                mcgill: document.getElementById('mcgill-jakub').checked ? "YES" : "NO",
-                totalLoad: totalLoad,
-                avgIntensity: (totalLoad / 6).toFixed(1),
-                ...roundData
-            };
-
-            btn.disabled = true;
-            status.innerText = "Syncing to Cloud...";
-            status.className = "text-center text-[10px] mt-4 font-bold uppercase text-slate-400";
-
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                status.className = "text-center text-[10px] mt-4 font-bold uppercase text-teal-600";
-                status.innerText = "✓ SYNC SUCCESSFUL";
-                setTimeout(() => location.reload(), 1500);
-            } catch (e) {
-                status.className = "text-center text-[10px] mt-4 font-bold uppercase text-red-500";
-                status.innerText = "⚠ SYNC FAILED";
-                btn.disabled = false;
-            }
-        }
-
-        // Initialize modules
-        renderExercises();
-        initRounds();
-    </script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

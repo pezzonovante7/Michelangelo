@@ -29,6 +29,13 @@ export function saveConfig(url, key) {
 export async function initClient() {
   const config = await loadConfig();
   if (!config?.url || !config?.key) return null;
+  if (!document.querySelector(`link[rel="preconnect"][href="${config.url}"]`)) {
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = config.url;
+    link.crossOrigin = '';
+    document.head.appendChild(link);
+  }
   supabase = createClient(config.url, config.key, {
     auth: {
       detectSessionInUrl: true,

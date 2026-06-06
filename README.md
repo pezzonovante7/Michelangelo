@@ -65,15 +65,44 @@ Open `http://localhost:8765` → **Sign in with GitHub**
 
 Push to `main`. Enable Pages in repo Settings → Pages → Source: `main` branch.
 
+### 7. Install on Your Phone (instant launch)
+
+Michelangelo is a **PWA** — once installed it opens full-screen from your home screen with cached app shell for near-instant load.
+
+**Android (Chrome)**
+
+1. Open `https://pezzonovante7.github.io/Michelangelo/`
+2. First visit: enter Supabase URL + anon key (saved in browser storage)
+3. Sign in with GitHub once
+4. Tap **Install** when the banner appears, or Chrome menu → **Install app** / **Add to Home screen**
+5. Optional: long-press the home-screen icon → **Begin today** shortcut jumps straight into today's session
+
+**iPhone (Safari)**
+
+1. Open the same URL in Safari
+2. Complete setup + GitHub sign-in
+3. Share button → **Add to Home Screen**
+4. Launch from the Michelangelo icon — opens standalone without Safari UI
+
+**Tips for gym use**
+
+- Open the installed app once on Wi-Fi so the service worker caches JS, HTML, and icons
+- Session drafts save locally if signal drops; sync when back online
+- Auth session persists — you won't need to sign in every visit
+
 ## Project Structure
 
 ```
 Michelangelo/
 ├── index.html
+├── manifest.json
+├── sw.js
+├── icons/
 ├── js/
 │   ├── app.js
 │   ├── program.js
 │   ├── db.js
+│   ├── progression.js
 │   └── config.example.js
 └── supabase/
     └── schema.sql
@@ -83,6 +112,7 @@ Michelangelo/
 
 - **GitHub sign-in** — one click, no passwords
 - **Personal lock** — optional username restriction in config
+- **PWA install** — home-screen icon, standalone mode, offline app shell
 - **Day-driven calendar** — app knows today's session
 - **Set-by-set strength logging** with ghost values from last session
 - **Phased boxing timers** — 3 distinct session types (A/B/C)

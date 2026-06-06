@@ -34,6 +34,74 @@ let restTarget = null;
 const $ = (sel) => document.querySelector(sel);
 const app = $('#app');
 const THEME_KEY = 'michelangelo_theme';
+const INSTALL_DISMISSED_KEY = 'michelangelo_install_dismissed';
+let deferredInstallPrompt = null;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+
+function clearLaunchParams() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('action') && !url.searchParams.has('source')) return;
+  url.searchParams.delete('action');
+  url.searchParams.delete('source');
+  const qs = url.searchParams.toString();
+  window.history.replaceState({}, '', url.pathname + (qs ? `?${qs}` : ''));
+}
+
+async function maybeOpenToday() {
+  if (new URLSearchParams(window.location.search).get('action') !== 'today') return;
+  clearLaunchParams();
+  const today = new Date();
+  const todayKey = getDayKey(today);
+  if (todayKey === 'rest') return;
+  await window._openDay(formatDate(today), todayKey);
+}
+
+function showInstallBanner() {
+  if (document.querySelector('.install-banner') || isStandalone()) return;
+  const banner = document.createElement('div');
+  banner.className = 'install-banner panel';
+  banner.innerHTML = `
+    <div class="install-row">
+      <div>
+        <p class="label mb-1">Install app</p>
+        <p class="install-copy">Opens instantly from your home screen — no browser chrome.</p>
+      </div>
+      <div class="install-actions">
+        <button onclick="window._dismissInstall()" class="sign-out">Later</button>
+        <button onclick="window._installApp()" class="btn install-btn">Install</button>
+      </div>
+    </div>`;
+  app.prepend(banner);
+}
+
+function tryShowInstallBanner() {
+  if (deferredInstallPrompt && currentUser && !localStorage.getItem(INSTALL_DISMISSED_KEY)) {
+    showInstallBanner();
+  }
+}
+
+window._installApp = async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.querySelector('.install-banner')?.remove();
+};
+
+window._dismissInstall = () => {
+  localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+  document.querySelector('.install-banner')?.remove();
+};
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  tryShowInstallBanner();
+});
 
 function getTheme() {
   return document.documentElement.getAttribute('data-theme') || 'light';
@@ -96,8 +164,10 @@ async function boot() {
     }
     authError = '';
     currentUser = session?.user ?? null;
-    if (currentUser) renderHome();
-    else renderAuth();
+    if (currentUser) {
+      await renderHome();
+      await maybeOpenToday();
+    } else renderAuth();
   });
 
   try {
@@ -109,8 +179,10 @@ async function boot() {
     return;
   }
 
-  if (currentUser) renderHome();
-  else renderAuth();
+  if (currentUser) {
+    await renderHome();
+    await maybeOpenToday();
+  } else renderAuth();
 
   window.addEventListener('online', () => {
     if (currentUser) renderHome();
@@ -267,6 +339,8 @@ async function renderHome() {
           </div>`;
       }).join('')}
     </div>`;
+
+  tryShowInstallBanner();
 }
 
 function computePillars(sessions) {

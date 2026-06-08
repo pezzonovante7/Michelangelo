@@ -172,7 +172,10 @@ async function boot() {
 
   try {
     const session = await getSession();
-    if (session?.user && !(await verifyUser(session.user))) return;
+    if (session?.user && !(await verifyUser(session.user))) {
+      renderAuth();
+      return;
+    }
     currentUser = session?.user ?? null;
   } catch {
     renderAuth('GitHub sign-in failed. Try again.');
@@ -270,77 +273,89 @@ async function renderHome() {
   const startDate = formatDate(weekDates[0]);
   const endDate = formatDate(weekDates[6]);
 
-  let weekSessions = [];
-  try {
-    weekSessions = await getWeekSessions(currentUser.id, startDate, endDate);
-  } catch { /* offline */ }
-
-  const completedMap = {};
-  weekSessions.forEach(s => {
-    if (s.status === 'completed') completedMap[`${s.session_date}_${s.day_key}`] = true;
-  });
-
   const todayKey = getDayKey(today);
   const todayInfo = getDayInfo(todayKey);
-  const pillars = computePillars(weekSessions);
 
-  app.innerHTML = `
-    <header class="header">
-      <div>
-        <h1 class="header-title">Michelangelo</h1>
-        <p class="header-date">${formatDisplayDate(today)}</p>
+  // Paint immediately (no network) so we never stick on the loading screen.
+  // Data for completed days + pillars will populate shortly after.
+  function paint(sessions = []) {
+    const completedMap = {};
+    sessions.forEach(s => {
+      if (s.status === 'completed') completedMap[`${s.session_date}_${s.day_key}`] = true;
+    });
+    const pillars = computePillars(sessions);
+
+    app.innerHTML = `
+      <header class="header">
+        <div>
+          <h1 class="header-title">Michelangelo</h1>
+          <p class="header-date">${formatDisplayDate(today)}</p>
+        </div>
+        ${headerActions('<button onclick="window._signOut()" class="sign-out">Exit</button>')}
+      </header>
+
+      <div class="week-nav">
+        <button onclick="window._changeWeek(-1)">‹</button>
+        <span class="label">Week</span>
+        <button onclick="window._changeWeek(1)">›</button>
       </div>
-      ${headerActions('<button onclick="window._signOut()" class="sign-out">Exit</button>')}
-    </header>
 
-    <div class="week-nav">
-      <button onclick="window._changeWeek(-1)">‹</button>
-      <span class="label">Week</span>
-      <button onclick="window._changeWeek(1)">›</button>
-    </div>
+      <div class="week-strip">
+        ${weekDates.map(d => {
+          const key = getDayKey(d);
+          const info = getDayInfo(key);
+          const dateStr = formatDate(d);
+          const done = completedMap[`${dateStr}_${key}`];
+          const isToday = formatDate(d) === formatDate(today);
+          return `
+            <button onclick="window._openDay('${dateStr}', '${key}')"
+              class="day ${isToday ? 'is-today' : ''} ${done ? 'is-done' : ''}">
+              <span class="day-letter">${d.toLocaleDateString('en', { weekday: 'narrow' })}</span>
+              <span class="day-code">${info.code}</span>
+              <span class="day-dot"></span>
+            </button>`;
+        }).join('')}
+      </div>
 
-    <div class="week-strip">
-      ${weekDates.map(d => {
-        const key = getDayKey(d);
-        const info = getDayInfo(key);
-        const dateStr = formatDate(d);
-        const done = completedMap[`${dateStr}_${key}`];
-        const isToday = formatDate(d) === formatDate(today);
-        return `
-          <button onclick="window._openDay('${dateStr}', '${key}')"
-            class="day ${isToday ? 'is-today' : ''} ${done ? 'is-done' : ''}">
-            <span class="day-letter">${d.toLocaleDateString('en', { weekday: 'narrow' })}</span>
-            <span class="day-code">${info.code}</span>
-            <span class="day-dot"></span>
-          </button>`;
-      }).join('')}
-    </div>
+      <div class="panel panel-hero">
+        <p class="label mb-1">Today</p>
+        <h2 class="display" style="font-size:1.35rem;margin:0">${todayInfo.label}</h2>
+        ${todayKey === 'rest'
+          ? '<p class="muted" style="font-size:0.8rem;margin-top:0.75rem">Active recovery — Zone 2 walk, mobility, McGill Big 3.</p>'
+          : `<button onclick="window._openDay('${formatDate(today)}', '${todayKey}')" class="btn mt-2">Begin Session</button>`
+        }
+      </div>
 
-    <div class="panel panel-hero">
-      <p class="label mb-1">Today</p>
-      <h2 class="display" style="font-size:1.35rem;margin:0">${todayInfo.label}</h2>
-      ${todayKey === 'rest'
-        ? '<p class="muted" style="font-size:0.8rem;margin-top:0.75rem">Active recovery — Zone 2 walk, mobility, McGill Big 3.</p>'
-        : `<button onclick="window._openDay('${formatDate(today)}', '${todayKey}')" class="btn mt-2">Begin Session</button>`
-      }
-    </div>
+      <div class="panel">
+        <p class="label mb-2">Longevity Pillars</p>
+        ${Object.entries(PILLARS).map(([key, p]) => {
+          const pct = pillars[key] || 0;
+          return `
+            <div class="pillar">
+              <div class="pillar-head">
+                <span>${p.label}</span>
+                <span class="dim">${pct}%</span>
+              </div>
+              <div class="pillar-track"><div class="pillar-fill" style="width:${pct}%"></div></div>
+            </div>`;
+        }).join('')}
+      </div>`;
 
-    <div class="panel">
-      <p class="label mb-2">Longevity Pillars</p>
-      ${Object.entries(PILLARS).map(([key, p]) => {
-        const pct = pillars[key] || 0;
-        return `
-          <div class="pillar">
-            <div class="pillar-head">
-              <span>${p.label}</span>
-              <span class="dim">${pct}%</span>
-            </div>
-            <div class="pillar-track"><div class="pillar-fill" style="width:${pct}%"></div></div>
-          </div>`;
-      }).join('')}
-    </div>`;
+    tryShowInstallBanner();
+  }
 
-  tryShowInstallBanner();
+  paint([]); // show UI instantly
+
+  // Load data in background; re-paint when ready (or stay with empty if offline/slow).
+  try {
+    const sessions = await getWeekSessions(currentUser.id, startDate, endDate);
+    // Only refresh if we're still showing the home (user didn't navigate into a session)
+    if (document.querySelector('.week-strip') && !document.querySelector('.rest-bar')) {
+      paint(sessions);
+    }
+  } catch {
+    /* offline or error — UI already visible with zeros */
+  }
 }
 
 function computePillars(sessions) {
@@ -1014,4 +1029,14 @@ window._saveBoxing = async () => {
 
 // ── Init ──────────────────────────────────────────────
 
-boot();
+boot().catch((err) => {
+  console.error('Michelangelo boot failed:', err);
+  const shell = document.getElementById('app');
+  if (shell) {
+    shell.innerHTML = `
+      <div class="panel text-center" style="margin-top: 5rem;">
+        <p class="status-error">Failed to start the app.</p>
+        <button onclick="location.reload()" class="btn mt-2">Reload</button>
+      </div>`;
+  }
+});

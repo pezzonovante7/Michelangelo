@@ -19,7 +19,15 @@ export async function loadConfig() {
   } catch { /* config.js not present */ }
 
   const stored = localStorage.getItem(CONFIG_KEY);
-  return stored ? JSON.parse(stored) : null;
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(CONFIG_KEY);
+      return null;
+    }
+  }
+  return null;
 }
 
 export function saveConfig(url, key) {

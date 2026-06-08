@@ -1,4 +1,4 @@
-const CACHE = 'michelangelo-v3';
+const CACHE = 'michelangelo-v4';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 const PRECACHE = [
@@ -73,7 +73,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin && !SHELL.has(request.url)) return;
+  if (url.origin !== self.location.origin && !SHELL.has(request.url) && !request.url.includes('supabase-js@2')) return;
 
   e.respondWith(cacheFirst(request));
 });

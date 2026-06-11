@@ -198,16 +198,25 @@ async function boot() {
   }
 
   onAuthChange(async (session) => {
-    if (session?.user && !(await verifyUser(session.user))) {
+    const user = session?.user ?? null;
+    if (user && !(await verifyUser(user))) {
       renderAuth();
       return;
     }
     authError = '';
-    currentUser = session?.user ?? null;
-    if (currentUser) {
+    const wasSignedIn = !!currentUser;
+    currentUser = user;
+    // React only to actual auth-state transitions. supabase-js fires this callback
+    // repeatedly (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED, on tab focus). Calling
+    // renderHome() on every event wipes out whatever screen the user is currently on —
+    // e.g. it clobbers a workout session a moment after they tap "Begin Session",
+    // which looks exactly like the button doing nothing.
+    if (user && !wasSignedIn) {
       await renderHome();
       await maybeOpenToday();
-    } else renderAuth();
+    } else if (!user && wasSignedIn) {
+      renderAuth();
+    }
   });
 
   try {

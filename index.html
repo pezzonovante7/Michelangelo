@@ -23,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Nord palette (https://www.nordtheme.com/).
            --gold* keep their names for backwards-compat but now hold the Nord
@@ -41,11 +41,18 @@
             --dim: #9aa3b4;
             --error: #bf616a;       /* nord11 */
             --success: #5b7f4c;     /* nord14, darkened for light bg */
-            --on-gold: #eceff4;     /* light text on the blue button */
-            --glow: rgba(94, 129, 172, 0.07);
-            --display: 'Cormorant Garamond', Georgia, serif;
-            --ui: 'DM Sans', system-ui, sans-serif;
-            --mono: 'IBM Plex Mono', monospace;
+            --on-gold: #f7faff;     /* light text on the blue button */
+            --glow: rgba(94, 129, 172, 0.10);
+            --glow2: rgba(143, 188, 187, 0.08);
+            --radius: 13px;
+            --accent-grad: linear-gradient(135deg, #5e81ac 0%, #81a1c1 55%, #8fbcbb 100%);
+            --accent-text-grad: linear-gradient(115deg, #5e81ac 0%, #6b8fbb 45%, #7ba8b0 100%);
+            --shadow: 0 1px 2px rgba(46,52,64,.05), 0 6px 20px -8px rgba(46,52,64,.14);
+            --shadow-strong: 0 10px 30px -10px rgba(94,129,172,.45), 0 2px 6px -2px rgba(94,129,172,.3);
+            --edge: inset 0 1px 0 rgba(255,255,255,.65);
+            --display: 'Space Grotesk', system-ui, sans-serif;
+            --ui: 'Inter', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
         }
 
         [data-theme="dark"] {
@@ -61,8 +68,14 @@
             --dim: #4c566a;         /* nord3 */
             --error: #bf616a;       /* nord11 */
             --success: #a3be8c;     /* nord14 */
-            --on-gold: #2e3440;     /* dark text on the bright cyan button */
-            --glow: rgba(136, 192, 208, 0.06);
+            --on-gold: #1c2230;     /* dark text on the bright cyan button */
+            --glow: rgba(136, 192, 208, 0.12);
+            --glow2: rgba(129, 161, 193, 0.10);
+            --accent-grad: linear-gradient(135deg, #8fbcbb 0%, #88c0d0 50%, #81a1c1 100%);
+            --accent-text-grad: linear-gradient(115deg, #8fbcbb 0%, #88c0d0 50%, #9db8e0 100%);
+            --shadow: 0 2px 4px rgba(0,0,0,.28), 0 10px 28px -10px rgba(0,0,0,.55);
+            --shadow-strong: 0 12px 36px -10px rgba(136,192,208,.50), 0 2px 8px -2px rgba(136,192,208,.35);
+            --edge: inset 0 1px 0 rgba(200,224,236,.10);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -72,8 +85,10 @@
             min-height: 100%;
             background: var(--bg);
             background-image:
-                radial-gradient(ellipse 120% 80% at 50% -20%, var(--glow), transparent),
-                radial-gradient(ellipse 60% 40% at 100% 100%, var(--glow), transparent);
+                radial-gradient(ellipse 100% 65% at 50% -10%, var(--glow), transparent 60%),
+                radial-gradient(ellipse 75% 50% at 100% 0%, var(--glow2), transparent 55%),
+                radial-gradient(ellipse 80% 55% at 0% 100%, var(--glow), transparent 55%);
+            background-attachment: fixed;
             color: var(--text);
             font-family: var(--ui);
             -webkit-font-smoothing: antialiased;
@@ -103,14 +118,20 @@
 
         .panel {
             background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow), var(--edge);
             padding: 1.25rem 1.15rem;
-            margin-bottom: 0.65rem;
+            margin-bottom: 0.85rem;
             position: relative;
-            transition: background 0.25s;
+            transition: background 0.25s, box-shadow 0.25s;
         }
+        .panel-hero { overflow: hidden; }
         .panel-hero::before {
-            content: ''; position: absolute; top: 0; left: 1.15rem; right: 1.15rem;
-            height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            content: ''; position: absolute; top: 0; left: 10%; right: 10%;
+            height: 2px; border-radius: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            box-shadow: 0 0 12px var(--gold-soft);
         }
 
         .back {
@@ -123,43 +144,47 @@
 
         .btn {
             display: flex; align-items: center; justify-content: center;
-            width: 100%; min-height: 48px; padding: 0.85rem 1rem;
-            background: var(--gold); color: var(--on-gold);
-            border: none; font-family: var(--ui); font-size: 0.7rem;
+            width: 100%; min-height: 50px; padding: 0.85rem 1rem;
+            background: var(--accent-grad); color: var(--on-gold);
+            border: none; border-radius: 11px; font-family: var(--ui); font-size: 0.7rem;
             font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-            cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+            box-shadow: var(--shadow-strong);
+            cursor: pointer; transition: box-shadow 0.2s, transform 0.1s, filter 0.15s;
             touch-action: manipulation;
         }
-        .btn:active { transform: scale(0.99); opacity: 0.9; }
-        .btn:disabled { opacity: 0.35; pointer-events: none; }
+        .btn:active { transform: translateY(1px) scale(0.995); filter: brightness(1.06); box-shadow: 0 5px 16px -8px rgba(94,129,172,.5); }
+        .btn:disabled { opacity: 0.4; box-shadow: none; filter: grayscale(0.3); pointer-events: none; }
 
         .btn-ghost {
             background: transparent; color: var(--gold);
-            border: 1px solid var(--gold-dim);
+            border: 1px solid var(--gold-dim); border-radius: 11px;
             min-height: 48px; padding: 0.7rem 1rem; font-size: 0.65rem; font-weight: 600;
             letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
             touch-action: manipulation;
         }
-        .btn-ghost:active { background: var(--gold-soft); }
+        .btn-ghost:active { background: var(--gold-soft); border-color: var(--gold); }
 
         .btn-github {
             display: flex; align-items: center; justify-content: center; gap: 0.65rem;
-            width: 100%; min-height: 48px; padding: 0.9rem;
+            width: 100%; min-height: 50px; padding: 0.9rem;
             background: var(--surface-2); color: var(--text);
-            border: 1px solid var(--line);
-            font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            border: 1px solid var(--line); border-radius: 11px;
+            box-shadow: var(--shadow);
+            font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.2s;
             touch-action: manipulation;
         }
-        .btn-github:active { border-color: var(--gold-dim); }
+        .btn-github:active { border-color: var(--gold-dim); box-shadow: var(--shadow-strong); }
 
         .btn-set {
-            min-width: 44px; min-height: 44px;
+            min-width: 44px; min-height: 44px; border-radius: 9px;
             background: var(--surface-2); color: var(--dim);
             border: 1px solid var(--line); font-family: var(--mono);
             font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
             touch-action: manipulation;
         }
-        .btn-set.done { background: var(--gold-soft); color: var(--gold); border-color: var(--gold); }
+        .btn-set.done { background: var(--accent-grad); color: var(--on-gold); border-color: transparent; box-shadow: 0 4px 12px -4px var(--gold-dim); }
 
         .input {
             width: 100%; background: var(--surface-2); color: var(--text);
@@ -202,10 +227,11 @@
         .day {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 0.3rem; min-height: 58px; padding: 0.5rem 0.15rem;
-            background: transparent; border: none; cursor: pointer;
+            background: transparent; border: none; border-radius: 10px; cursor: pointer;
             transition: background 0.15s; touch-action: manipulation;
         }
         .day:active { background: var(--surface-2); }
+        .day.is-today { background: var(--gold-soft); }
         .day-letter { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; }
         .day-code {
             font-family: var(--display); font-size: 1.15rem; font-weight: 600;
@@ -220,8 +246,8 @@
         .pillar { margin-bottom: 0.85rem; }
         .pillar:last-child { margin-bottom: 0; }
         .pillar-head { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
-        .pillar-track { height: 2px; background: var(--surface-2); overflow: hidden; }
-        .pillar-fill { height: 100%; background: var(--gold); transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        .pillar-track { height: 3px; background: var(--surface-2); overflow: hidden; border-radius: 3px; }
+        .pillar-fill { height: 100%; background: var(--accent-grad); border-radius: 3px; box-shadow: 0 0 8px var(--gold-dim); transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 
         .exercise { padding-bottom: 1.15rem; margin-bottom: 1.15rem; border-bottom: 1px solid var(--line); }
         .exercise:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -239,8 +265,8 @@
         }
 
         .phase-track { display: flex; gap: 3px; margin-top: 1rem; }
-        .phase-seg { flex: 1; height: 2px; background: var(--surface-2); transition: background 0.3s; }
-        .phase-seg.done { background: var(--gold); }
+        .phase-seg { flex: 1; height: 3px; border-radius: 3px; background: var(--surface-2); transition: background 0.3s; }
+        .phase-seg.done { background: var(--accent-grad); box-shadow: 0 0 6px var(--gold-dim); }
         .phase-seg.active { background: var(--gold-soft); box-shadow: 0 0 6px var(--gold-soft); }
 
         .overview-row {
@@ -281,7 +307,13 @@
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
         .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.75rem; }
-        .header-title { font-family: var(--display); font-size: clamp(1.5rem, 6vw, 1.75rem); font-weight: 600; letter-spacing: 0.04em; margin: 0; line-height: 1.1; }
+        .header-title {
+            font-family: var(--display); font-size: clamp(1.5rem, 6vw, 1.85rem); font-weight: 600;
+            letter-spacing: -0.01em; margin: 0; line-height: 1.1;
+            background: var(--accent-text-grad);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
+        }
         .header-date { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; margin-top: 0.35rem; }
         .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
         .header-row { display: flex; align-items: center; gap: 0.5rem; }

@@ -1,4 +1,4 @@
-const CACHE = 'michelangelo-v6';
+const CACHE = 'michelangelo-v7';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 const PRECACHE = [

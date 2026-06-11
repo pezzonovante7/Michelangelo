@@ -37,6 +37,46 @@ const THEME_KEY = 'michelangelo_theme';
 const INSTALL_DISMISSED_KEY = 'michelangelo_install_dismissed';
 let deferredInstallPrompt = null;
 
+// Event delegation on the persistent #app container.
+// This is much more reliable than attaching listeners to buttons after every innerHTML replace
+// (especially across PWA updates, service worker caching, and multiple paints).
+function setupHomeDelegation() {
+  if (!app) return;
+  app.addEventListener('click', (e) => {
+    // Week navigation arrows
+    const weekBtn = e.target.closest('[data-week-dir]');
+    if (weekBtn) {
+      const dir = parseInt(weekBtn.getAttribute('data-week-dir'), 10);
+      console.log('[Michelangelo] week nav click', dir);
+      window._changeWeek?.(dir);
+      return;
+    }
+
+    // Calendar day tiles OR the "Begin Session" button
+    const dayBtn = e.target.closest('[data-date][data-day-key]');
+    if (dayBtn) {
+      const dateStr = dayBtn.getAttribute('data-date');
+      const dayKey = dayBtn.getAttribute('data-day-key');
+      console.log('[Michelangelo] open-day click', { dateStr, dayKey });
+      try {
+        window._openDay?.(dateStr, dayKey);
+      } catch (err) {
+        console.error('[Michelangelo] error calling _openDay', err);
+      }
+      return;
+    }
+
+    // Sign out in home header
+    const signOutBtn = e.target.closest('.sign-out');
+    if (signOutBtn) {
+      console.log('[Michelangelo] sign-out click');
+      window._signOut?.();
+      return;
+    }
+  });
+}
+setupHomeDelegation();
+
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
@@ -351,19 +391,6 @@ async function renderHome() {
         }).join('')}
       </div>`;
 
-    // Wire up interactive elements with real listeners (robust, no inline onclick string hacks)
-    app.querySelectorAll('[data-week-dir]').forEach(btn => {
-      const dir = parseInt(btn.getAttribute('data-week-dir'), 10);
-      btn.addEventListener('click', () => window._changeWeek(dir));
-    });
-    app.querySelectorAll('[data-date][data-day-key]').forEach(btn => {
-      const dateStr = btn.getAttribute('data-date');
-      const dayKey = btn.getAttribute('data-day-key');
-      btn.addEventListener('click', () => window._openDay(dateStr, dayKey));
-    });
-    const signOutBtn = app.querySelector('.sign-out');
-    if (signOutBtn) signOutBtn.addEventListener('click', () => window._signOut());
-
     tryShowInstallBanner();
   }
 
@@ -408,14 +435,30 @@ window._signOut = async () => { await signOut(); renderAuth(); };
 window._updateNotes = (val) => { if (activeSession) { activeSession.notes = val; saveDraft(activeSession); } };
 
 window._openDay = async (dateStr, dayKey) => {
-  if (dayKey === 'rest') {
-    renderRestDay(dateStr);
-    return;
-  }
+  try {
+    console.log('[Michelangelo] _openDay called', { dateStr, dayKey });
 
-  const info = getDayInfo(dayKey);
-  if (info.type === 'strength') await renderStrengthSession(dateStr, dayKey);
-  else await renderBoxingSession(dateStr, dayKey);
+    if (dayKey === 'rest') {
+      renderRestDay(dateStr);
+      return;
+    }
+
+    const info = getDayInfo(dayKey);
+    if (!info) {
+      console.error('[Michelangelo] Unknown dayKey in _openDay:', dayKey);
+      return;
+    }
+
+    if (info.type === 'strength') {
+      await renderStrengthSession(dateStr, dayKey);
+    } else {
+      await renderBoxingSession(dateStr, dayKey);
+    }
+  } catch (err) {
+    console.error('[Michelangelo] _openDay failed', err);
+    // Fall back to home so user isn't stuck
+    try { renderHome(); } catch {}
+  }
 };
 
 // ── Rest Day ──────────────────────────────────────────

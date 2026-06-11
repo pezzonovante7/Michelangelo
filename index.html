@@ -371,7 +371,29 @@
     <script type="module" src="js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function () {});
+            navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
+                // Proactively check for updates
+                registration.update();
+
+                // If there's already a waiting worker, activate it immediately and reload to pick up new code
+                if (registration.waiting) {
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[Michelangelo] New app version installed. Reloading to activate...');
+                            // Tell the new SW to take over immediately
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            // Small delay then reload so the new JS runs
+                            setTimeout(() => window.location.reload(), 300);
+                        }
+                    });
+                });
+            }).catch(function () {});
         }
     </script>
 </body>

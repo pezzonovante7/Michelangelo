@@ -35,6 +35,13 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Support immediate activation from the page when we detect a new SW (helps deploys take effect without manual hard refresh)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 function isApiRequest(url) {
   return url.includes('supabase.co')
     || url.includes('github.com/login')

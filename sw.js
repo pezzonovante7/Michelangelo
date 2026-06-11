@@ -1,4 +1,4 @@
-const CACHE = 'michelangelo-v4';
+const CACHE = 'michelangelo-v5';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 const PRECACHE = [
@@ -12,6 +12,7 @@ const PRECACHE = [
   `${BASE}js/program.js`,
   `${BASE}js/db.js`,
   `${BASE}js/progression.js`,
+  `${BASE}js/config.js`,
   `${BASE}js/config.example.js`,
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm',
 ];

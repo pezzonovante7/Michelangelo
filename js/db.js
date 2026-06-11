@@ -1,10 +1,9 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
 const OFFLINE_KEY = 'michelangelo_offline_queue';
 const DRAFT_KEY = 'michelangelo_session_draft';
 const CONFIG_KEY = 'michelangelo_config';
 
 let supabase = null;
+let createClient = null;
 
 export async function loadConfig() {
   try {
@@ -37,6 +36,18 @@ export function saveConfig(url, key) {
 export async function initClient() {
   const config = await loadConfig();
   if (!config?.url || !config?.key) return null;
+
+  if (!createClient) {
+    try {
+      const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      createClient = mod.createClient;
+    } catch (err) {
+      console.error('Michelangelo: Failed to dynamically load @supabase/supabase-js from CDN:', err);
+      // Return null so boot shows the setup screen (or improved error) instead of hanging forever.
+      return null;
+    }
+  }
+
   if (!document.querySelector(`link[rel="preconnect"][href="${config.url}"]`)) {
     const link = document.createElement('link');
     link.rel = 'preconnect';

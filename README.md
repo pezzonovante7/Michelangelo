@@ -126,3 +126,20 @@ Michelangelo/
 - **Backend:** Supabase (PostgreSQL + Auth)
 - **Auth:** GitHub OAuth
 - **Hosting:** GitHub Pages
+
+## Troubleshooting
+
+**Stuck on "Loading" screen**
+
+- Do **not** open `index.html` by double-clicking (file://). Use a local server: `python -m http.server 8765` then visit http://localhost:8765
+- Disable ad blockers / privacy extensions (they commonly block cdn.jsdelivr.net which serves the Supabase client library).
+- Check DevTools Console + Network tab for failed requests to jsdelivr.net or supabase.co.
+- The app now dynamically imports the Supabase library (instead of top-level static import) + shows hints after a few seconds and better error screens to avoid being permanently stuck.
+- If using the installed PWA, try "Clear site data" or uninstall/re-add the PWA after fixing network/adblock issues.
+- For the public hosted demo (GitHub Pages), only the configured GitHub user can sign in. Everyone else sees an access denied message after OAuth (this is intentional).
+
+**Can't sign in or queries fail after setup**
+
+- Make sure you ran `supabase/schema.sql` in your Supabase project's SQL Editor.
+- Confirm GitHub provider is enabled in Supabase Auth and the OAuth app callback URLs match.
+- Check that `ALLOWED_GITHUB_USERNAME` in `js/config.js` (or the value saved during setup) matches your GitHub username (or set it to `null` to allow any user).

@@ -355,6 +355,19 @@
             <p class="loading-pulse">Loading</p>
         </div>
     </div>
+    <script>
+        // Safety net: if the main module fails to load (e.g. CDN blocked by adblocker, network, or file:// protocol),
+        // the pulsing "Loading" would stay forever. Surface a hint after a few seconds.
+        setTimeout(() => {
+            const shell = document.getElementById('app');
+            if (shell && shell.querySelector('.loading-pulse')) {
+                const hint = document.createElement('div');
+                hint.style.cssText = 'margin-top:1rem;font-size:0.65rem;color:#6b6560;text-align:center;line-height:1.4';
+                hint.innerHTML = 'Still loading? Open DevTools (F12) → Console/Network.<br>Common causes: ad blocker blocking cdn.jsdelivr.net, corporate firewall, or opening index.html directly (use a local server).';
+                shell.querySelector('.panel').appendChild(hint);
+            }
+        }, 4500);
+    </script>
     <script type="module" src="js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

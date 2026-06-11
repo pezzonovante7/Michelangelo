@@ -149,7 +149,7 @@ async function boot() {
 
   const client = await initClient();
   if (!client) {
-    renderSetup();
+    await renderSetup();
     return;
   }
 
@@ -203,7 +203,11 @@ async function verifyUser(user) {
 
 // ── Setup (missing config.js) ─────────────────────────
 
-function renderSetup() {
+async function renderSetup() {
+  const existing = await loadConfig();
+  const preUrl = existing?.url || '';
+  const preKey = existing?.key || '';
+
   app.innerHTML = `
     <div class="panel">
       <div class="flex justify-between items-center mb-1">
@@ -211,7 +215,7 @@ function renderSetup() {
         <button onclick="window._toggleTheme()" class="theme-toggle">${themeToggleLabel()}</button>
       </div>
       <h2 class="display" style="font-size:1.5rem;margin:0 0 0.5rem">Connect Supabase</h2>
-      <p class="muted" style="font-size:0.75rem;margin-bottom:1.5rem">One-time. Project Settings → API.</p>
+      <p class="muted" style="font-size:0.75rem;margin-bottom:1.5rem">One-time. Project Settings → API. If you already have config.js but still see this, an ad blocker or network may be blocking the Supabase JS library (cdn.jsdelivr.net).</p>
       <label class="label">Project URL</label>
       <input id="setupUrl" type="url" placeholder="https://xxxxx.supabase.co" class="input mb-1">
       <label class="label mt-2">Anon Key</label>
@@ -220,6 +224,12 @@ function renderSetup() {
       <button onclick="window._saveSetup()" class="btn mt-2">Connect</button>
       <a href="https://supabase.com/dashboard" target="_blank" class="label" style="display:block;text-align:center;margin-top:1.25rem;text-decoration:none">Create project →</a>
     </div>`;
+
+  // Prefill safely (avoids " in values breaking attribute)
+  const urlInput = $('#setupUrl');
+  const keyInput = $('#setupKey');
+  if (urlInput) urlInput.value = preUrl;
+  if (keyInput) keyInput.value = preKey;
 }
 
 window._saveSetup = async () => {
@@ -291,13 +301,13 @@ async function renderHome() {
           <h1 class="header-title">Michelangelo</h1>
           <p class="header-date">${formatDisplayDate(today)}</p>
         </div>
-        ${headerActions('<button onclick="window._signOut()" class="sign-out">Exit</button>')}
+        ${headerActions('<button class="sign-out">Exit</button>')}
       </header>
 
       <div class="week-nav">
-        <button onclick="window._changeWeek(-1)">‹</button>
+        <button data-week-dir="-1">‹</button>
         <span class="label">Week</span>
-        <button onclick="window._changeWeek(1)">›</button>
+        <button data-week-dir="1">›</button>
       </div>
 
       <div class="week-strip">
@@ -308,7 +318,7 @@ async function renderHome() {
           const done = completedMap[`${dateStr}_${key}`];
           const isToday = formatDate(d) === formatDate(today);
           return `
-            <button onclick="window._openDay('${dateStr}', '${key}')"
+            <button data-date="${dateStr}" data-day-key="${key}"
               class="day ${isToday ? 'is-today' : ''} ${done ? 'is-done' : ''}">
               <span class="day-letter">${d.toLocaleDateString('en', { weekday: 'narrow' })}</span>
               <span class="day-code">${info.code}</span>
@@ -322,7 +332,7 @@ async function renderHome() {
         <h2 class="display" style="font-size:1.35rem;margin:0">${todayInfo.label}</h2>
         ${todayKey === 'rest'
           ? '<p class="muted" style="font-size:0.8rem;margin-top:0.75rem">Active recovery — Zone 2 walk, mobility, McGill Big 3.</p>'
-          : `<button onclick="window._openDay('${formatDate(today)}', '${todayKey}')" class="btn mt-2">Begin Session</button>`
+          : `<button data-date="${formatDate(today)}" data-day-key="${todayKey}" class="btn mt-2">Begin Session</button>`
         }
       </div>
 
@@ -340,6 +350,19 @@ async function renderHome() {
             </div>`;
         }).join('')}
       </div>`;
+
+    // Wire up interactive elements with real listeners (robust, no inline onclick string hacks)
+    app.querySelectorAll('[data-week-dir]').forEach(btn => {
+      const dir = parseInt(btn.getAttribute('data-week-dir'), 10);
+      btn.addEventListener('click', () => window._changeWeek(dir));
+    });
+    app.querySelectorAll('[data-date][data-day-key]').forEach(btn => {
+      const dateStr = btn.getAttribute('data-date');
+      const dayKey = btn.getAttribute('data-day-key');
+      btn.addEventListener('click', () => window._openDay(dateStr, dayKey));
+    });
+    const signOutBtn = app.querySelector('.sign-out');
+    if (signOutBtn) signOutBtn.addEventListener('click', () => window._signOut());
 
     tryShowInstallBanner();
   }
@@ -628,8 +651,14 @@ function bindChecklist() {
     el.addEventListener('change', () => {
       activeSession[el.dataset.check] = el.checked;
       saveDraft(activeSession);
-      const program = STRENGTH_PROGRAM[activeSession.dayKey];
-      if (activeSession.step === 'prep') renderStrengthStep(program);
+      if (activeSession.step === 'prep') {
+        const dk = activeSession.dayKey;
+        if (STRENGTH_PROGRAM[dk]) {
+          renderStrengthStep(STRENGTH_PROGRAM[dk]);
+        } else if (BOXING_PROGRAM[dk]) {
+          renderBoxingStep(BOXING_PROGRAM[dk]);
+        }
+      }
     });
   });
 }
@@ -1036,6 +1065,7 @@ boot().catch((err) => {
     shell.innerHTML = `
       <div class="panel text-center" style="margin-top: 5rem;">
         <p class="status-error">Failed to start the app.</p>
+        <p class="muted" style="font-size:0.7rem;margin:0.75rem 0">Check the browser console (F12) for details. Common causes: failed to load Supabase library from CDN (adblocker / network), bad config.js, or browser restrictions (file:// protocol).</p>
         <button onclick="location.reload()" class="btn mt-2">Reload</button>
       </div>`;
   }

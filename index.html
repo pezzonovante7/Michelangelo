@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#f7f5f0">
+    <meta name="theme-color" content="#eceff4">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Michelangelo">
@@ -17,7 +17,7 @@
             var t = localStorage.getItem('michelangelo_theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.content = t === 'dark' ? '#09090b' : '#f7f5f0';
+            if (meta) meta.content = t === 'dark' ? '#2e3440' : '#eceff4';
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,41 +25,44 @@
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* Nord palette (https://www.nordtheme.com/).
+           --gold* keep their names for backwards-compat but now hold the Nord
+           "Frost" accent (frost-blue on light, frost-cyan on dark). */
         :root, [data-theme="light"] {
-            --bg: #f7f5f0;
+            --bg: #eceff4;          /* nord6  - snow storm */
             --surface: #ffffff;
-            --surface-2: #f0ece4;
-            --line: rgba(120, 95, 55, 0.14);
-            --gold: #8b6914;
-            --gold-dim: rgba(139, 105, 20, 0.35);
-            --gold-soft: rgba(139, 105, 20, 0.1);
-            --text: #1a1814;
-            --muted: #6b6560;
-            --dim: #9a948c;
-            --error: #b54545;
-            --success: #5a7a42;
-            --on-gold: #f7f5f0;
-            --glow: rgba(139, 105, 20, 0.06);
+            --surface-2: #e5e9f0;   /* nord5 */
+            --line: rgba(76, 86, 106, 0.16);
+            --gold: #5e81ac;        /* nord10 - frost blue accent */
+            --gold-dim: rgba(94, 129, 172, 0.4);
+            --gold-soft: rgba(94, 129, 172, 0.12);
+            --text: #2e3440;        /* nord0 */
+            --muted: #4c566a;       /* nord3 */
+            --dim: #9aa3b4;
+            --error: #bf616a;       /* nord11 */
+            --success: #5b7f4c;     /* nord14, darkened for light bg */
+            --on-gold: #eceff4;     /* light text on the blue button */
+            --glow: rgba(94, 129, 172, 0.07);
             --display: 'Cormorant Garamond', Georgia, serif;
             --ui: 'DM Sans', system-ui, sans-serif;
             --mono: 'IBM Plex Mono', monospace;
         }
 
         [data-theme="dark"] {
-            --bg: #09090b;
-            --surface: #131316;
-            --surface-2: #1a1a1f;
-            --line: rgba(196, 165, 116, 0.1);
-            --gold: #c4a574;
-            --gold-dim: rgba(196, 165, 116, 0.35);
-            --gold-soft: rgba(196, 165, 116, 0.15);
-            --text: #edeae4;
-            --muted: #7a756f;
-            --dim: #4a4744;
-            --error: #d47272;
-            --success: #8aab6e;
-            --on-gold: #09090b;
-            --glow: rgba(196, 165, 116, 0.06);
+            --bg: #2e3440;          /* nord0  - polar night */
+            --surface: #3b4252;     /* nord1 */
+            --surface-2: #434c5e;   /* nord2 */
+            --line: rgba(136, 192, 208, 0.14);
+            --gold: #88c0d0;        /* nord8  - frost cyan accent */
+            --gold-dim: rgba(136, 192, 208, 0.38);
+            --gold-soft: rgba(136, 192, 208, 0.15);
+            --text: #eceff4;        /* nord6 */
+            --muted: #8e99ad;
+            --dim: #4c566a;         /* nord3 */
+            --error: #bf616a;       /* nord11 */
+            --success: #a3be8c;     /* nord14 */
+            --on-gold: #2e3440;     /* dark text on the bright cyan button */
+            --glow: rgba(136, 192, 208, 0.06);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -362,7 +365,7 @@
             const shell = document.getElementById('app');
             if (shell && shell.querySelector('.loading-pulse')) {
                 const hint = document.createElement('div');
-                hint.style.cssText = 'margin-top:1rem;font-size:0.65rem;color:#6b6560;text-align:center;line-height:1.4';
+                hint.style.cssText = 'margin-top:1rem;font-size:0.65rem;color:#4c566a;text-align:center;line-height:1.4';
                 hint.innerHTML = 'Still loading? Open DevTools (F12) → Console/Network.<br>Common causes: ad blocker blocking cdn.jsdelivr.net, corporate firewall, or opening index.html directly (use a local server).';
                 shell.querySelector('.panel').appendChild(hint);
             }
@@ -371,11 +374,21 @@
     <script type="module" src="js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
+            // Reload exactly once when a new service worker takes control, so the
+            // freshly-activated worker serves the new app code. Guarded against loops.
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                console.log('[Michelangelo] New app version active. Reloading...');
+                window.location.reload();
+            });
+
             navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
                 // Proactively check for updates
                 registration.update();
 
-                // If there's already a waiting worker, activate it immediately and reload to pick up new code
+                // If a worker is already waiting, ask it to take over now.
                 if (registration.waiting) {
                     registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 }
@@ -384,12 +397,11 @@
                     const newWorker = registration.installing;
                     if (!newWorker) return;
                     newWorker.addEventListener('statechange', () => {
+                        // Only prompt activation when there's already a controller (i.e. an
+                        // update, not the first install). controllerchange then reloads us.
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[Michelangelo] New app version installed. Reloading to activate...');
-                            // Tell the new SW to take over immediately
+                            console.log('[Michelangelo] New app version installed. Activating...');
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
-                            // Small delay then reload so the new JS runs
-                            setTimeout(() => window.location.reload(), 300);
                         }
                     });
                 });

@@ -26,9 +26,9 @@ def write_png(path, size, rgba_rows):
 
 
 def render_icon(size):
-    bg = (247, 245, 240, 255)
-    gold = (139, 105, 20, 255)
-    border = (139, 105, 20, 255)
+    bg = (236, 239, 244, 255)      # Nord snow storm #eceff4
+    gold = (94, 129, 172, 255)     # Nord frost blue #5e81ac
+    border = (94, 129, 172, 255)
     rows = []
     margin = int(size * 0.08)
     for y in range(size):

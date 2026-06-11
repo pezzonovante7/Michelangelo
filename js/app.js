@@ -151,7 +151,7 @@ function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(THEME_KEY, theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = theme === 'dark' ? '#09090b' : '#f7f5f0';
+  if (meta) meta.content = theme === 'dark' ? '#2e3440' : '#eceff4';
 }
 
 function themeToggleLabel() {

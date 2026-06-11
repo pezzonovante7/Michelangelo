@@ -1,4 +1,4 @@
-const CACHE = 'michelangelo-v5';
+const CACHE = 'michelangelo-v6';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 const PRECACHE = [
@@ -48,6 +48,8 @@ function isApiRequest(url) {
     || url.includes('githubusercontent.com');
 }
 
+// Cache-first: for immutable/static assets (icons, fonts, pinned CDN lib).
+// Returns the cached copy instantly and refreshes it in the background.
 function cacheFirst(request) {
   return caches.match(request).then(cached => {
     const network = fetch(request).then(res => {
@@ -61,26 +63,50 @@ function cacheFirst(request) {
   });
 }
 
+// Network-first: for the app's OWN code (HTML + JS). Always tries to fetch the
+// freshest version so deploys take effect immediately; falls back to cache only
+// when offline. Without this, a cache-first strategy serves stale app.js forever
+// and code fixes never reach the user.
+function networkFirst(request, fallbackUrl) {
+  return fetch(request).then(res => {
+    if (res && res.ok) {
+      const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(fallbackUrl || request, copy));
+    }
+    return res;
+  }).catch(() =>
+    caches.match(request).then(cached =>
+      cached || (fallbackUrl ? caches.match(fallbackUrl) : caches.match(BASE))
+    )
+  );
+}
+
+// Our own application code — must always be served network-first so updates land.
+function isAppCode(url) {
+  if (url.origin !== self.location.origin) return false;
+  return url.pathname.endsWith('.js') || url.pathname.endsWith('.html');
+}
+
 self.addEventListener('fetch', (e) => {
   const { request } = e;
   if (request.method !== 'GET') return;
   if (isApiRequest(request.url)) return;
 
+  // HTML navigations: always try the network first, fall back to cached shell offline.
   if (request.mode === 'navigate') {
-    e.respondWith(
-      caches.match(`${BASE}index.html`).then(cached => {
-        const network = fetch(request).then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(`${BASE}index.html`, copy));
-          return res;
-        });
-        return cached || network.catch(() => caches.match(BASE));
-      })
-    );
+    e.respondWith(networkFirst(request, `${BASE}index.html`));
     return;
   }
 
   const url = new URL(request.url);
+
+  // App's own JS/HTML: network-first so fixes deploy without a stale-cache trap.
+  if (isAppCode(url)) {
+    e.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Everything else we care about (icons, fonts, pinned Supabase lib): cache-first.
   if (url.origin !== self.location.origin && !SHELL.has(request.url) && !request.url.includes('supabase-js@2')) return;
 
   e.respondWith(cacheFirst(request));

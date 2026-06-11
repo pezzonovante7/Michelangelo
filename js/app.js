@@ -23,6 +23,15 @@ let allowedGitHub = null;
 let authError = '';
 let weekOffset = 0;
 let activeSession = null;
+
+// Which screen the user is currently on: 'auth' | 'setup' | 'home' | 'session' | 'rest'.
+// User-initiated navigation (tapping a day, Back, week arrows) is authoritative and
+// always renders. Background events (auth callbacks, the initial-session load, the
+// "online" event, the week-data fetch) may ONLY repaint the view they belong to — they
+// must never replace a screen the user has navigated to. This is the single rule that
+// keeps a trailing auth/network event from wiping out an open session.
+let currentView = null;
+const inSession = () => currentView === 'session' || currentView === 'rest';
 let timerInterval = null;
 let timerSeconds = 0;
 let timerRunning = false;
@@ -197,31 +206,33 @@ async function boot() {
     app.innerHTML = '<div class="panel text-center" style="margin-top:5rem"><p class="loading-pulse">Signing in</p></div>';
   }
 
+  // supabase-js fires this callback repeatedly: INITIAL_SESSION on subscribe, then
+  // SIGNED_IN, TOKEN_REFRESHED, and again whenever the tab regains focus. We only act
+  // on genuine transitions, and never while the user is inside a session/rest screen.
   onAuthChange(async (session) => {
     const user = session?.user ?? null;
     if (user && !(await verifyUser(user))) {
+      currentUser = null;
       renderAuth();
       return;
     }
     authError = '';
     const wasSignedIn = !!currentUser;
     currentUser = user;
-    // React only to actual auth-state transitions. supabase-js fires this callback
-    // repeatedly (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED, on tab focus). Calling
-    // renderHome() on every event wipes out whatever screen the user is currently on —
-    // e.g. it clobbers a workout session a moment after they tap "Begin Session",
-    // which looks exactly like the button doing nothing.
-    if (user && !wasSignedIn) {
+    if (user && !wasSignedIn && !inSession()) {
       await renderHome();
       await maybeOpenToday();
     } else if (!user && wasSignedIn) {
       renderAuth();
     }
+    // Same user, repeat event (refresh/focus): do nothing — never clobber the view.
   });
 
+  // Resolve the initial auth state once (this also completes the OAuth code exchange).
   try {
     const session = await getSession();
     if (session?.user && !(await verifyUser(session.user))) {
+      currentUser = null;
       renderAuth();
       return;
     }
@@ -231,13 +242,21 @@ async function boot() {
     return;
   }
 
+  // Initial paint. By the time this resolves the auth callback may have already raced
+  // ahead and rendered home, or the user may have navigated — so only paint if nothing
+  // else has taken the screen.
   if (currentUser) {
-    await renderHome();
-    await maybeOpenToday();
-  } else renderAuth();
+    if (!inSession() && currentView !== 'home') {
+      await renderHome();
+      await maybeOpenToday();
+    }
+  } else if (!inSession()) {
+    renderAuth();
+  }
 
+  // Reconnecting should refresh the home data, but must not yank the user out of a session.
   window.addEventListener('online', () => {
-    if (currentUser) renderHome();
+    if (currentUser && currentView === 'home') renderHome();
   });
 }
 
@@ -253,6 +272,7 @@ async function verifyUser(user) {
 // ── Setup (missing config.js) ─────────────────────────
 
 async function renderSetup() {
+  currentView = 'setup';
   const existing = await loadConfig();
   const preUrl = existing?.url || '';
   const preKey = existing?.key || '';
@@ -303,6 +323,7 @@ window._saveSetup = async () => {
 // ── Auth ──────────────────────────────────────────────
 
 function renderAuth(errorMsg = '') {
+  currentView = 'auth';
   const msg = errorMsg || authError;
   app.innerHTML = `
     <div class="panel text-center" style="margin-top:3rem">
@@ -327,6 +348,7 @@ window._signInGitHub = async () => {
 // ── Home / Calendar ───────────────────────────────────
 
 async function renderHome() {
+  currentView = 'home';
   const today = new Date();
   const weekDates = getWeekDates(new Date(today.getFullYear(), today.getMonth(), today.getDate() + weekOffset * 7));
   const startDate = formatDate(weekDates[0]);
@@ -408,8 +430,9 @@ async function renderHome() {
   // Load data in background; re-paint when ready (or stay with empty if offline/slow).
   try {
     const sessions = await getWeekSessions(currentUser.id, startDate, endDate);
-    // Only refresh if we're still showing the home (user didn't navigate into a session)
-    if (document.querySelector('.week-strip') && !document.querySelector('.rest-bar')) {
+    // Only refresh if the user is still on the home screen — if they navigated into a
+    // session while this was loading, painting now would clobber it.
+    if (currentView === 'home') {
       paint(sessions);
     }
   } catch {
@@ -444,9 +467,10 @@ window._signOut = async () => { await signOut(); renderAuth(); };
 window._updateNotes = (val) => { if (activeSession) { activeSession.notes = val; saveDraft(activeSession); } };
 
 window._openDay = async (dateStr, dayKey) => {
+  // Claim the view synchronously, before any await, so a background repaint that
+  // fires while the session is loading cannot grab the screen first.
+  currentView = 'session';
   try {
-    console.log('[Michelangelo] _openDay called', { dateStr, dayKey });
-
     if (dayKey === 'rest') {
       renderRestDay(dateStr);
       return;
@@ -455,6 +479,7 @@ window._openDay = async (dateStr, dayKey) => {
     const info = getDayInfo(dayKey);
     if (!info) {
       console.error('[Michelangelo] Unknown dayKey in _openDay:', dayKey);
+      renderHome();
       return;
     }
 
@@ -473,6 +498,7 @@ window._openDay = async (dateStr, dayKey) => {
 // ── Rest Day ──────────────────────────────────────────
 
 function renderRestDay(dateStr) {
+  currentView = 'rest';
   app.innerHTML = `
     <button onclick="window._goHome()" class="back">← Back</button>
     <div class="panel panel-hero text-center">

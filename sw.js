@@ -1,4 +1,4 @@
-const CACHE = 'michelangelo-v8';
+const CACHE = 'michelangelo-v9';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 // NOTE: do NOT list js/config.js here — it is gitignored and 404s on the server.
@@ -11,6 +11,7 @@ const PRECACHE = [
   `${BASE}icons/icon.svg`,
   `${BASE}icons/icon-192.png`,
   `${BASE}icons/icon-512.png`,
+  `${BASE}icons/icon-512-maskable.png`,
   `${BASE}js/app.js`,
   `${BASE}js/program.js`,
   `${BASE}js/db.js`,

@@ -25,20 +25,26 @@ def write_png(path, size, rgba_rows):
     path.write_bytes(data)
 
 
-def render_icon(size):
+def render_icon(size, maskable=False):
     bg = (236, 239, 244, 255)      # Nord snow storm #eceff4
     gold = (94, 129, 172, 255)     # Nord frost blue #5e81ac
     border = (94, 129, 172, 255)
     rows = []
     margin = int(size * 0.08)
+    # The diamond/border are scaled down for maskable icons so they stay inside the
+    # "safe zone" (centre 80%) that Android won't crop with its circle/squircle mask.
+    diamond_scale = 0.78 if maskable else 1.0
     for y in range(size):
         row = bytearray(size * 4)
         for x in range(size):
             i = x * 4
-            on_border = margin <= x < size - margin and (y < margin + 2 or y >= size - margin - 2 or x < margin + 2 or x >= size - margin - 2)
+            # Maskable icons must be full-bleed (no edge border) — a border near the
+            # edge gets clipped by the mask and looks broken.
+            on_border = (not maskable) and margin <= x < size - margin and (
+                y < margin + 2 or y >= size - margin - 2 or x < margin + 2 or x >= size - margin - 2)
             cx, cy = size // 2, int(size * 0.56)
-            dx = abs(x - cx) / (size * 0.22)
-            dy = abs(y - cy) / (size * 0.28)
+            dx = abs(x - cx) / (size * 0.22 * diamond_scale)
+            dy = abs(y - cy) / (size * 0.28 * diamond_scale)
             in_m = dx + dy < 1.0 and y > size * 0.22 and y < size * 0.78 and abs(x - cx) < size * 0.18
             if in_m:
                 row[i:i+4] = bytes(gold)
@@ -53,7 +59,9 @@ def render_icon(size):
 def main():
     for size in (192, 512):
         write_png(OUT / f"icon-{size}.png", size, render_icon(size))
-    print("Generated icons/icon-192.png and icons/icon-512.png")
+    # Dedicated maskable variant (full-bleed, content kept inside the safe zone).
+    write_png(OUT / "icon-512-maskable.png", 512, render_icon(512, maskable=True))
+    print("Generated icon-192.png, icon-512.png, icon-512-maskable.png")
 
 
 if __name__ == "__main__":

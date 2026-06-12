@@ -1,6 +1,9 @@
-const CACHE = 'michelangelo-v7';
+const CACHE = 'michelangelo-v8';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
+// NOTE: do NOT list js/config.js here — it is gitignored and 404s on the server.
+// cache.addAll() is atomic, so a single 404 fails the entire SW install. config.js
+// is fetched lazily at runtime (with its own fallback) and doesn't need precaching.
 const PRECACHE = [
   BASE,
   `${BASE}index.html`,
@@ -12,8 +15,6 @@ const PRECACHE = [
   `${BASE}js/program.js`,
   `${BASE}js/db.js`,
   `${BASE}js/progression.js`,
-  `${BASE}js/config.js`,
-  `${BASE}js/config.example.js`,
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm',
 ];
 

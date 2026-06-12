@@ -32,6 +32,16 @@ let activeSession = null;
 // keeps a trailing auth/network event from wiping out an open session.
 let currentView = null;
 const inSession = () => currentView === 'session' || currentView === 'rest';
+
+// Resolve a promise but never let it block the UI: if it hasn't settled within `ms`,
+// fall back. Used to guard session-screen DB reads so a slow or wedged query degrades
+// gracefully (render with no prior data) instead of freezing the screen forever.
+function withTimeout(promise, ms, fallback = null) {
+  return Promise.race([
+    Promise.resolve(promise).catch(() => fallback),
+    new Promise(resolve => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 let timerInterval = null;
 let timerSeconds = 0;
 let timerRunning = false;
@@ -207,25 +217,19 @@ async function boot() {
   }
 
   // supabase-js fires this callback repeatedly: INITIAL_SESSION on subscribe, then
-  // SIGNED_IN, TOKEN_REFRESHED, and again whenever the tab regains focus. We only act
-  // on genuine transitions, and never while the user is inside a session/rest screen.
-  onAuthChange(async (session) => {
+  // SIGNED_IN, TOKEN_REFRESHED, and again whenever the tab regains focus.
+  //
+  // CRITICAL: this callback runs while supabase-js holds its internal auth lock, and it
+  // AWAITS the callback before releasing it. Calling any Supabase method here (directly,
+  // or indirectly via renderHome()/maybeOpenToday(), which query the DB) re-enters that
+  // lock and deadlocks getSession() — permanently. Since every DB query attaches its auth
+  // header via getSession(), the whole client then hangs: the home screen still paints
+  // (it paints before its query) but opening a session hangs forever, which is exactly the
+  // "Begin Session does nothing" bug. So we must NOT do Supabase work synchronously here —
+  // defer it to a fresh task with setTimeout(0), after the lock has been released.
+  onAuthChange((session) => {
     const user = session?.user ?? null;
-    if (user && !(await verifyUser(user))) {
-      currentUser = null;
-      renderAuth();
-      return;
-    }
-    authError = '';
-    const wasSignedIn = !!currentUser;
-    currentUser = user;
-    if (user && !wasSignedIn && !inSession()) {
-      await renderHome();
-      await maybeOpenToday();
-    } else if (!user && wasSignedIn) {
-      renderAuth();
-    }
-    // Same user, repeat event (refresh/focus): do nothing — never clobber the view.
+    setTimeout(() => { handleAuthChange(user); }, 0);
   });
 
   // Resolve the initial auth state once (this also completes the OAuth code exchange).
@@ -258,6 +262,27 @@ async function boot() {
   window.addEventListener('online', () => {
     if (currentUser && currentView === 'home') renderHome();
   });
+}
+
+// Runs OUTSIDE the supabase auth callback (deferred via setTimeout), so it's safe to call
+// Supabase here. Reacts only to genuine sign-in/out transitions and never clobbers a screen
+// the user has navigated to.
+async function handleAuthChange(user) {
+  if (user && !(await verifyUser(user))) {
+    currentUser = null;
+    renderAuth();
+    return;
+  }
+  authError = '';
+  const wasSignedIn = !!currentUser;
+  currentUser = user;
+  if (user && !wasSignedIn && !inSession() && currentView !== 'home') {
+    await renderHome();
+    await maybeOpenToday();
+  } else if (!user && wasSignedIn) {
+    renderAuth();
+  }
+  // Same user, repeat event (refresh/focus): do nothing.
 }
 
 async function verifyUser(user) {
@@ -521,10 +546,9 @@ async function renderStrengthSession(dateStr, dayKey) {
   let existing = null;
   let lastSession = null;
 
-  try {
-    existing = await getSessionByDate(currentUser.id, dateStr, dayKey);
-    lastSession = await getLastStrengthSession(currentUser.id, dayKey, dateStr);
-  } catch { /* offline — use draft */ }
+  // Guarded with a timeout so a slow/wedged query can never freeze the screen.
+  existing = await withTimeout(getSessionByDate(currentUser.id, dateStr, dayKey), 5000);
+  lastSession = await withTimeout(getLastStrengthSession(currentUser.id, dayKey, dateStr), 5000);
 
   const draft = loadDraft();
   if (draft?.dayKey === dayKey && draft?.dateStr === dateStr) {
@@ -913,10 +937,8 @@ window._saveStrength = async () => {
 
 async function renderBoxingSession(dateStr, dayKey) {
   const program = BOXING_PROGRAM[dayKey];
-  let existing = null;
-  try {
-    existing = await getSessionByDate(currentUser.id, dateStr, dayKey);
-  } catch { /* offline */ }
+  // Guarded with a timeout so a slow/wedged query can never freeze the screen.
+  let existing = await withTimeout(getSessionByDate(currentUser.id, dateStr, dayKey), 5000);
 
   const draft = loadDraft();
   if (draft?.dayKey === dayKey && draft?.dateStr === dateStr) {
